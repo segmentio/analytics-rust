@@ -8,7 +8,7 @@ impl Client {
         Client {}
     }
 
-    pub fn send(&self, msg: Message) -> Result<()> {
+    pub fn send(&self, write_key: &str, msg: Message) -> Result<()> {
         Ok(())
     }
 }

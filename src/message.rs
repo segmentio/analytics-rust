@@ -44,6 +44,7 @@ impl Batch {
     }
 
     pub fn reset(&mut self, message_id: String) {
+        self.message_id = message_id;
         self.byte_count = 0;
         self.messages.clear();
     }
