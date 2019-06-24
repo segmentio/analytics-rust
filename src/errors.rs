@@ -9,6 +9,10 @@ pub enum Error {
     Io(#[fail(cause)] io::Error),
     #[fail(display = "JSON error: {}", _0)]
     Json(#[fail(cause)] serde_json::error::Error),
+    #[fail(display = "error: {}", _0)]
+    MessageTooLarge(String),
+    #[fail(display = "error: {}", _0)]
+    MaxBatchSize(String),
     //    #[fail(display = "error: {}", _0)]
     //    Custom(String),
 }
