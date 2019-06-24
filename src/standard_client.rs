@@ -21,7 +21,8 @@ impl Default for StandardClientBuilder {
             retry_fn: Box::new(|client, write_key, batch| {
                 let mut result = Ok(());
                 for _i in 0..5 {
-                    result = client.ll_client.send(write_key, Message::Batch(batch));
+                    let b = (*batch).clone();
+                    result = client.ll_client.send(write_key, Message::Batch(b));
                     if result.is_err() {
                         thread::sleep(Duration::new(1, 0));
                         continue;
