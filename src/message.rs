@@ -5,7 +5,17 @@ pub enum Message {
 }
 
 pub struct Batch {
+    message_id: String,
     messages: Vec<BatchMessage>,
+}
+
+impl Batch {
+    pub fn new(message_id: String) -> Self {
+        Self {
+            message_id,
+            messages: Vec::new(),
+        }
+    }
 }
 
 pub enum BatchMessage {

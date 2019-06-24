@@ -18,7 +18,10 @@ pub struct StandardClient {
 }
 
 impl StandardClient {
-    pub fn new_buffer<'a, S>(&'a self, write_key: &'a str) -> Buffer<'a> {
+    pub fn new_buffer<'a, S>(&'a self, write_key: S) -> Buffer<'a>
+    where
+        S: Into<Cow<'a, str>>,
+    {
         Buffer::new(&self.ll_client, write_key)
     }
 }
