@@ -1,5 +1,6 @@
 use failure::Fail;
 use std::io;
+//use url::ParseError;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -13,6 +14,8 @@ pub enum Error {
     MessageTooLarge(String),
     #[fail(display = "error: {}", _0)]
     MaxBatchSize(String),
+    //    #[fail(display = "URL error: {}", _0)]
+    //    Url(#[fail(cause)] url::ParseError),
     //    #[fail(display = "error: {}", _0)]
     //    Custom(String),
 }
@@ -34,3 +37,9 @@ impl From<serde_json::error::Error> for Error {
         Error::Json(error)
     }
 }
+
+//impl From<url::ParseError> for Error {
+//    fn from(error: url::ParseError) -> Self {
+//        Error::Url(error)
+//    }
+//}

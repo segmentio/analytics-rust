@@ -3,10 +3,38 @@ use crate::errors::Result;
 use crate::ll_client;
 use crate::message::{Batch, Message};
 use std::borrow::Cow;
+use std::time::Duration;
+use url::Url;
 
-pub struct StandardClientBuilder {}
+pub struct StandardClientBuilder {
+    url: Url,
+    retryFn: Box<Fn(&StandardClient, &Batch) -> Result<()>>,
+}
+
+impl Default for StandardClientBuilder {
+    fn default() -> Self {
+        StandardClientBuilder {
+            url: Url::parse("https://api.segment.io").unwrap(),
+            retryFn: Box::new(|client, batch| {
+                let mut result = Ok(());
+                for _i in 0..5 {
+                    result = client.ll_client.send(Message::Batch(batch));
+                    if result.is_err() {
+                        continue;
+                    }
+                }
+                result
+            }),
+        }
+    }
+}
 
 impl StandardClientBuilder {
+    pub fn url(mut self, url: Url) -> Self {
+        self.url = url;
+        self
+    }
+
     pub fn build(self) -> Result<StandardClient> {
         Ok(StandardClient {
             ll_client: ll_client::Client::new(),
@@ -29,6 +57,4 @@ impl StandardClient {
     pub(crate) fn send(&self, batch: &Batch) -> Result<()> {
         self.ll_client.send(Message::Batch(batch))
     }
-
-    //    pub(crate)
 }
