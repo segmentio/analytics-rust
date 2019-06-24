@@ -1,9 +1,12 @@
 [package]
-name = "analytics-rust"
-version = "0.1.0"
 authors = ["Dean Karn <dean.karn@gmail.com>"]
+description = "Segment analytics client for Rust https://segment.com/docs/libraries/rust"
 edition = "2018"
 license = "MIT OR Apache-2.0"
-description = "Segment analytics client for Rust https://segment.com/docs/libraries/rust"
+name = "analytics"
+version = "0.1.0"
 
 [dependencies]
+failure = "0.1.5"
+serde = "1.0.93"
+serde_json = "1.0.39"
