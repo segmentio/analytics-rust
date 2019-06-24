@@ -1,7 +1,7 @@
 use analytics::client::Client;
 use analytics::http::HttpClient;
 use analytics::message::Message;
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg, AppSettings, SubCommand};
 use failure::Error;
 use std::io;
 
@@ -10,6 +10,7 @@ fn main() -> Result<(), Error> {
         .version("0.1")
         .author("Segment <friends@segment.com>")
         .about("Sends analytics events to Segment")
+        .setting(AppSettings::ColoredHelp)
         .arg(
             Arg::with_name("write-key")
                 .help("Write key to send message with")
