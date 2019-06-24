@@ -1,6 +1,7 @@
 use crate::buffer::Buffer;
 use crate::errors::Result;
 use crate::ll_client;
+use crate::message::{Batch, Message};
 use std::borrow::Cow;
 
 pub struct StandardClientBuilder {}
@@ -22,6 +23,12 @@ impl StandardClient {
     where
         S: Into<Cow<'a, str>>,
     {
-        Buffer::new(&self.ll_client, write_key)
+        Buffer::new(&self, write_key)
     }
+
+    pub(crate) fn send(&self, batch: &Batch) -> Result<()> {
+        self.ll_client.send(Message::Batch(batch))
+    }
+
+    //    pub(crate)
 }
