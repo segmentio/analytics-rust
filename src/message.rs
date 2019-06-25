@@ -1,6 +1,7 @@
 use chrono::{Date, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -355,6 +356,18 @@ pub enum IdentifyingID {
 pub struct Identify {
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub traits: Option<Traits>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
