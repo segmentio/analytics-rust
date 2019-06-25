@@ -65,199 +65,217 @@ msg_impl!(Alias);
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct App {
-    name: String,
-    version: String,
-    build: String,
+    pub name: String,
+    pub version: String,
+    pub build: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Campaign {
-    name: String,
-    source: String,
-    medium: String,
-    term: String,
-    content: String,
+    pub name: String,
+    pub source: String,
+    pub medium: String,
+    pub term: String,
+    pub content: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Device {
-    id: String,
-    manufacturer: String,
-    model: String,
-    name: String,
+    pub id: String,
+    pub manufacturer: String,
+    pub model: String,
+    pub name: String,
 
     #[serde(rename = "type")]
-    device_type: String,
+    pub device_type: String,
 
-    version: String,
+    pub version: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Library {
-    name: String,
-    version: String,
+    pub name: String,
+    pub version: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Location {
-    city: String,
-    country: String,
-    latitude: isize,
-    longitude: isize,
-    region: String,
-    speed: usize,
+    pub city: String,
+    pub country: String,
+    pub latitude: isize,
+    pub longitude: isize,
+    pub region: String,
+    pub speed: usize,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Network {
-    bluetooth: bool,
-    carrier: String,
-    cellular: bool,
-    wifi: bool,
+    pub bluetooth: bool,
+    pub carrier: String,
+    pub cellular: bool,
+    pub wifi: bool,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Os {
-    name: String,
-    version: String,
+    pub name: String,
+    pub version: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Webpage {
-    hash: String,
-    path: String,
-    referrer: String,
-    search: String,
-    title: String,
-    url: String,
+    pub hash: String,
+    pub path: String,
+    pub referrer: String,
+    pub search: String,
+    pub title: String,
+    pub url: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Referrer {
     #[serde(rename = "type")]
-    referrer_type: String,
-    name: String,
-    url: String,
-    link: String,
+    pub referrer_type: String,
+    pub name: String,
+    pub url: String,
+    pub link: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct DeviceScreen {
     #[serde(rename = "type")]
-    density: usize,
-    height: usize,
-    width: usize,
+    pub density: usize,
+    pub height: usize,
+    pub width: usize,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Traits {
     #[serde(skip_serializing_if = "Option::is_none")]
-    address: Option<TraitAddress>,
+    pub address: Option<TraitAddress>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    age: Option<u8>,
+    pub age: Option<u8>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    avatar: Option<String>,
+    pub avatar: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    birthday: Option<DateTime<Utc>>, // Date does not impl Serialize..
+    pub birthday: Option<DateTime<Utc>>, // Date does not impl Serialize..
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    company: Option<TraitCompany>,
+    pub company: Option<TraitCompany>,
 
     #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
-    created_at: Option<DateTime<Utc>>,
+    pub created_at: Option<DateTime<Utc>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    description: Option<String>,
+    pub description: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    email: Option<String>,
+    pub email: Option<String>,
 
     #[serde(rename = "firstName", skip_serializing_if = "Option::is_none")]
-    first_name: Option<String>,
+    pub first_name: Option<String>,
 
     #[serde(rename = "lastName", skip_serializing_if = "Option::is_none")]
-    last_name: Option<String>,
+    pub last_name: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    gender: Option<String>,
+    pub gender: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    id: Option<String>,
+    pub id: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    phone: Option<String>,
+    pub phone: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    title: Option<String>,
+    pub title: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    username: Option<String>,
+    pub username: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    website: Option<String>,
+    pub website: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct TraitCompany {
-    name: Option<String>,
-    id: Option<Value>, // TODO: make string or number enum to reduce variants
-    industry: Option<String>,
-    employee_count: Option<usize>,
-    plan: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Value>, // TODO: make string or number enum to reduce variants
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub industry: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employee_count: Option<usize>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct TraitAddress {
-    city: Option<String>,
-    country: Option<String>,
-    postalCode: Option<String>,
-    state: Option<String>,
-    street: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+
+    #[serde(rename = "postalCode", skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub street: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -266,63 +284,63 @@ pub struct Context {
     ///
     /// This is usually used to flag an .identify() call to just update the traits but not “last seen.”
     #[serde(skip_serializing_if = "Option::is_none")]
-    active: Option<bool>,
+    pub active: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    app: Option<App>,
+    pub app: Option<App>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    campaign: Option<Campaign>,
+    pub campaign: Option<Campaign>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    device: Option<Device>,
+    pub device: Option<Device>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    ip: Option<String>,
+    pub ip: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    library: Option<Library>,
+    pub library: Option<Library>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    locale: Option<String>,
+    pub locale: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    location: Option<Location>,
+    pub location: Option<Location>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    network: Option<Network>,
+    pub network: Option<Network>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    os: Option<Os>,
+    pub os: Option<Os>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    page: Option<Webpage>,
+    pub page: Option<Webpage>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    referrer: Option<Referrer>,
+    pub referrer: Option<Referrer>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    screen: Option<DeviceScreen>,
+    pub screen: Option<DeviceScreen>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    timezone: Option<String>,
+    pub timezone: Option<String>,
 
     #[serde(rename = "groupId", skip_serializing_if = "Option::is_none")]
-    group_id: Option<String>,
+    pub group_id: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    traits: Option<Traits>,
+    pub traits: Option<Traits>,
 
     #[serde(rename = "userAgent", skip_serializing_if = "Option::is_none")]
-    user_agent: Option<String>,
+    pub user_agent: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 #[serde(untagged)]
-enum IdentifyingID {
+pub enum IdentifyingID {
     Id {
         #[serde(rename = "userId")]
         value: String,
@@ -336,7 +354,7 @@ enum IdentifyingID {
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Identify {
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    id: IdentifyingID,
+    pub id: Option<IdentifyingID>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
