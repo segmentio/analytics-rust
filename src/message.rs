@@ -181,7 +181,7 @@ pub struct DeviceScreen {
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
-pub struct Traits {
+pub struct IdentifyTraits {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub address: Option<TraitAddress>,
 
@@ -330,7 +330,7 @@ pub struct Context {
     pub group_id: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub traits: Option<Traits>,
+    pub traits: Option<IdentifyTraits>,
 
     #[serde(rename = "userAgent", skip_serializing_if = "Option::is_none")]
     pub user_agent: Option<String>,
@@ -367,7 +367,7 @@ pub struct Identify {
     pub timestamp: Option<DateTime<Utc>>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub traits: Option<Traits>,
+    pub traits: Option<IdentifyTraits>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -482,12 +482,66 @@ pub struct Screen {
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct GroupTraits {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<TraitAddress>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
+
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<DateTime<Utc>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employees: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub industry: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Group {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub id: Option<IdentifyingID>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
 
     #[serde(rename = "groupId")]
     pub group_id: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub traits: Option<GroupTraits>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
