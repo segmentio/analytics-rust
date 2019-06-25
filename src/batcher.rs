@@ -1,5 +1,5 @@
 use crate::errors::{Error as AnalyticsError, MaxBatchSize};
-use crate::message::{Batch, BatchMessage, Message};
+use crate::message::{Batch, BatchMessage, Context, Message};
 use chrono::{DateTime, Utc};
 use failure::{bail, Error};
 use serde_json::{Map, Value};
@@ -12,11 +12,11 @@ pub struct Batcher {
     message_id: String,
     buf: Vec<BatchMessage>,
     byte_count: usize,
-    context: Map<String, Value>,
+    context: Option<Context>,
 }
 
 impl Batcher {
-    pub fn new(message_id: String, context: Map<String, Value>) -> Self {
+    pub fn new(message_id: String, context: Option<Context>) -> Self {
         Self {
             message_id,
             buf: Vec::new(),
@@ -56,46 +56,60 @@ impl Batcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::message::Track;
+    use crate::message::{IdentifyingID, Library, Track};
 
     #[test]
     fn test_push_and_into() {
         let batch_msg = Track {
-            user_id: "id".to_string(),
-            event: "login".to_string(),
+            id: Some(IdentifyingID::Id {
+                id: "myid".to_owned(),
+            }),
+            event: "login".to_owned(),
+            ..Default::default()
         };
 
-        let mut library = Map::new();
-        library.insert("name".to_string(), "analytics-rust".into());
-        library.insert("version".to_string(), env!("CARGO_PKG_VERSION").into());
-        let mut context = Map::new();
-        context.insert("library".to_string(), library.into());
+        let context = Context {
+            library: Some(Library {
+                name: "analytics-rust".to_owned(),
+                version: env!("CARGO_PKG_VERSION").to_owned(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
 
-        let mut batcher = Batcher::new("msg_id".to_string(), context.clone());
+        let mut batcher = Batcher::new("msg_id".to_owned(), Some(context.clone()));
         let result = batcher.push(batch_msg.into());
         let batch = batcher.into_message();
         let inner_batch = match batch {
             Message::Batch(b) => b,
             _ => panic!("invalid message type"),
         };
-        assert_eq!(context, inner_batch.context);
+        assert_eq!(context, inner_batch.context.unwrap());
         assert_eq!(1, inner_batch.messages.len());
 
         let track = match inner_batch.messages.get(0).unwrap() {
             BatchMessage::Track(t) => t,
             _ => panic!("invalid message batch type"),
         };
-        assert_eq!("id".to_string(), track.user_id);
-        assert_eq!("login".to_string(), track.event);
+        assert_eq!(
+            &IdentifyingID::Id {
+                id: "myid".to_owned()
+            },
+            track.id.as_ref().unwrap()
+        );
+        assert_eq!("login".to_owned(), track.event);
     }
 
     #[test]
     fn test_bad_message_size() {
         let batch_msg = Track {
-            user_id: String::from_utf8(vec![b'a'; 1024 * 33]).unwrap(), // 33KB message
-            event: "login".to_string(),
+            id: Some(IdentifyingID::Id {
+                id: String::from_utf8(vec![b'a'; 1024 * 33]).unwrap(), // 33KB message
+            }),
+            event: "login".to_owned(),
+            ..Default::default()
         };
-        let mut batcher = Batcher::new("msg_id".to_string(), Map::new());
+        let mut batcher = Batcher::new("msg_id".to_owned(), None);
         let result = batcher.push(batch_msg.into());
 
         let err = result.err().unwrap();
@@ -110,10 +124,13 @@ mod tests {
     #[test]
     fn test_max_buffer() {
         let batch_msg = Track {
-            user_id: String::from_utf8(vec![b'a'; 1024 * 30]).unwrap(), // 3oKB message
-            event: "login".to_string(),
+            id: Some(IdentifyingID::Id {
+                id: String::from_utf8(vec![b'a'; 1024 * 30]).unwrap(), // 30KB message
+            }),
+            event: "login".to_owned(),
+            ..Default::default()
         };
-        let mut batcher = Batcher::new("msg_id".to_string(), Map::new());
+        let mut batcher = Batcher::new("msg_id".to_owned(), None);
 
         let mut result = Ok(None);
         for _i in 0..20 {

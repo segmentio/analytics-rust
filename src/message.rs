@@ -28,7 +28,7 @@ pub struct Batch {
     pub sent_at: DateTime<Utc>,
 
     #[serde(rename = "context")]
-    pub context: Map<String, Value>,
+    pub context: Option<Context>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
@@ -344,11 +344,11 @@ pub struct Context {
 pub enum IdentifyingID {
     Id {
         #[serde(rename = "userId")]
-        value: String,
+        id: String,
     },
     AnonymousId {
         #[serde(rename = "anonymousId")]
-        value: String,
+        id: String,
     },
 }
 
@@ -371,11 +371,38 @@ pub struct Identify {
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct TrackProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub revenue: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<f64>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub id: Option<IdentifyingID>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
 
     pub event: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TrackProperties>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
