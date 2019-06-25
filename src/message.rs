@@ -65,6 +65,7 @@ msg_impl!(Screen);
 msg_impl!(Group);
 msg_impl!(Alias);
 
+/// Information about the current application, containing name, version and build.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct App {
     pub name: String,
@@ -75,6 +76,10 @@ pub struct App {
     pub custom: Option<Map<String, Value>>,
 }
 
+///
+/// Information about the campaign that resulted in the API call.
+///
+/// This maps directly to the common UTM campaign parameters.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Campaign {
     pub name: String,
@@ -87,6 +92,7 @@ pub struct Campaign {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the device, containing id, manufacturer, model, name, type and version.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Device {
     pub id: String,
@@ -103,6 +109,7 @@ pub struct Device {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the library making the requests to the API, containing name and version.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Library {
     pub name: String,
@@ -112,6 +119,7 @@ pub struct Library {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the user’s current location, containing city, country, latitude, longitude, region and speed.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Location {
     pub city: String,
@@ -125,6 +133,7 @@ pub struct Location {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the current network connection, containing bluetooth, carrier, cellular and wifi.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Network {
     pub bluetooth: bool,
@@ -136,6 +145,7 @@ pub struct Network {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the operating system, containing name and version.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Os {
     pub name: String,
@@ -145,6 +155,7 @@ pub struct Os {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the current page in the browser, containing hash, path, referrer, search, title and url.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Webpage {
     pub hash: String,
@@ -158,6 +169,7 @@ pub struct Webpage {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the way the user was referred to the website or app, containing type, name, url and link.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Referrer {
     #[serde(rename = "type")]
@@ -170,6 +182,7 @@ pub struct Referrer {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Information about the device’s screen, containing density, height and width.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct DeviceScreen {
     #[serde(rename = "type")]
@@ -181,6 +194,11 @@ pub struct DeviceScreen {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Contains reserved Traits to be included in any identify call.
+///
+/// You should only use reserved traits for their intended meaning.
+///
+/// Additional trait information should be added to the custom map field.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct IdentifyTraits {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -280,6 +298,7 @@ pub struct TraitAddress {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// Context is a dictionary of extra information that provides useful context about a datapoint, for example the user’s ip address or locale. Context is a complete and explicit specification, so properties outside the spec will be ignored. You should only use Context fields for their intended meaning.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Context {
     /// Whether a user is active
@@ -288,54 +307,77 @@ pub struct Context {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub active: Option<bool>,
 
+    /// Information about the current application.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app: Option<App>,
 
+    /// Information about the campaign that resulted in the API call.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub campaign: Option<Campaign>,
 
+    /// Information about the device.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub device: Option<Device>,
 
+    /// Current user’s IP address.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,
 
+    /// Information about the library making the requests to the API.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub library: Option<Library>,
 
+    /// Locale string for the current user, for example `en-US`
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locale: Option<String>,
 
+    /// Information about the user’s current location.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<Location>,
 
+    /// Information about the current network connection.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub network: Option<Network>,
 
+    /// Information about the operating system.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os: Option<Os>,
 
+    /// Information about the current page in the browser.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub page: Option<Webpage>,
 
+    /// Information about the way the user was referred to the website or app.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub referrer: Option<Referrer>,
 
+    /// Information about the device’s screen.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub screen: Option<DeviceScreen>,
 
+    /// Timezones are sent as tzdata strings to add user timezone information which might be stripped from the timestamp.
+    ///
+    /// Ex: `America/New_York`
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timezone: Option<String>,
 
+    /// Group / Account ID.
+    ///
+    /// This is useful in B2B use cases where you need to attribute your non-group calls to a company or account. It is relied on by several Customer Success and CRM tools.
     #[serde(rename = "groupId", skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
 
+    /// Traits of the current user.
+    ///
+    /// This is useful in cases where you need to track an event, but also associate information from a previous identify call. You should fill this object the same way you would fill traits in an identify call.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub traits: Option<IdentifyTraits>,
 
+    /// User agent of the device making the request.
     #[serde(rename = "userAgent", skip_serializing_if = "Option::is_none")]
     pub user_agent: Option<String>,
 
+    /// Additional custom information that can be passed.
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub custom: Option<Map<String, Value>>,
 }
@@ -353,6 +395,7 @@ pub enum IdentifyingID {
     },
 }
 
+/// Identify lets you tie a user to their actions and record traits about them. It includes a unique User ID and any optional traits you know about them like their email, name, etc.
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Identify {
     #[serde(rename = "type")]
