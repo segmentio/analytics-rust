@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{Date, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -63,7 +63,7 @@ msg_impl!(Screen);
 msg_impl!(Group);
 msg_impl!(Alias);
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct App {
     name: String,
     version: String,
@@ -73,7 +73,7 @@ pub struct App {
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Campaign {
     name: String,
     source: String,
@@ -85,7 +85,7 @@ pub struct Campaign {
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Device {
     id: String,
     manufacturer: String,
@@ -101,7 +101,7 @@ pub struct Device {
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Library {
     name: String,
     version: String,
@@ -110,20 +110,20 @@ pub struct Library {
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Location {
     city: String,
     country: String,
-    latitude: i32,
-    longitude: i32,
+    latitude: isize,
+    longitude: isize,
     region: String,
-    speed: u32,
+    speed: usize,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Network {
     bluetooth: bool,
     carrier: String,
@@ -134,7 +134,7 @@ pub struct Network {
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Os {
     name: String,
     version: String,
@@ -143,7 +143,7 @@ pub struct Os {
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Webpage {
     hash: String,
     path: String,
@@ -156,7 +156,7 @@ pub struct Webpage {
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Referrer {
     #[serde(rename = "type")]
     referrer_type: String,
@@ -168,19 +168,99 @@ pub struct Referrer {
     custom: Option<Map<String, Value>>,
 }
 
-
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct DeviceScreen {
     #[serde(rename = "type")]
-    density: u32,
-    height: u32,
-    width: u32,
+    density: usize,
+    height: usize,
+    width: usize,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Traits {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    address: Option<TraitAddress>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    age: Option<u8>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    avatar: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    birthday: Option<DateTime<Utc>>, // Date does not impl Serialize..
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    company: Option<TraitCompany>,
+
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    created_at: Option<DateTime<Utc>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    email: Option<String>,
+
+    #[serde(rename = "firstName", skip_serializing_if = "Option::is_none")]
+    first_name: Option<String>,
+
+    #[serde(rename = "lastName", skip_serializing_if = "Option::is_none")]
+    last_name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    gender: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    phone: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    username: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    website: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct TraitCompany {
+    name: Option<String>,
+    id: Option<Value>, // TODO: make string or number enum to reduce variants
+    industry: Option<String>,
+    employee_count: Option<usize>,
+    plan: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct TraitAddress {
+    city: Option<String>,
+    country: Option<String>,
+    postalCode: Option<String>,
+    state: Option<String>,
+    street: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Context {
     /// Whether a user is active
     ///
@@ -224,20 +304,42 @@ pub struct Context {
     #[serde(skip_serializing_if = "Option::is_none")]
     screen: Option<DeviceScreen>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    timezone: Option<String>,
+
+    #[serde(rename = "groupId", skip_serializing_if = "Option::is_none")]
+    group_id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    traits: Option<Traits>,
+
+    #[serde(rename = "userAgent", skip_serializing_if = "Option::is_none")]
+    user_agent: Option<String>,
+
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     custom: Option<Map<String, Value>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
-pub struct Identify {
-    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<String>,
-
-    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
-    anonymous_id: Option<String>,
+#[serde(untagged)]
+enum IdentifyingID {
+    Id {
+        #[serde(rename = "userId")]
+        value: String,
+    },
+    AnonymousId {
+        #[serde(rename = "anonymousId")]
+        value: String,
+    },
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Identify {
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    id: IdentifyingID,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
     #[serde(rename = "userId")]
     pub user_id: String,
@@ -245,19 +347,19 @@ pub struct Track {
     pub event: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
     #[serde(rename = "userId")]
     pub user_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Screen {
     #[serde(rename = "userId")]
     pub user_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Group {
     #[serde(rename = "userId")]
     pub user_id: String,
@@ -266,7 +368,7 @@ pub struct Group {
     pub group_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
     #[serde(rename = "userId")]
     pub user_id: String,
