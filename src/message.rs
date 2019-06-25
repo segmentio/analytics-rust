@@ -406,6 +406,33 @@ pub struct Track {
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct PageProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub referrer: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub search: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keywords: Option<Vec<String>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
@@ -419,16 +446,39 @@ pub struct Page {
     pub integrations: Option<BTreeMap<String, bool>>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TrackProperties>,
+    pub properties: Option<PageProperties>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct ScreenProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Screen {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub id: Option<IdentifyingID>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    pub name: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ScreenProperties>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
