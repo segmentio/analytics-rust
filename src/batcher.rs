@@ -128,7 +128,7 @@ mod tests {
 
         match err {
             AnalyticsError::MaxBatchSize(message) => {
-                assert_eq!(message.message, batch_msg);
+                assert_eq!(message.message, BatchMessage::Track(batch_msg));
             }
             _ => panic!("wrong error type returned: {:?}", err),
         }

@@ -30,7 +30,7 @@ pub struct Batch {
     pub context: Map<String, Value>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub enum BatchMessage {
     Identify(Identify),
     Track(Track),
@@ -171,7 +171,7 @@ pub struct Referrer {
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct DeviceScreen {
-    #[(rename = "type")]
+    #[serde(rename = "type")]
     density: u32,
     height: u32,
     width: u32,
