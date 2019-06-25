@@ -2,6 +2,7 @@ use chrono::{Date, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -352,8 +353,14 @@ pub enum IdentifyingID {
     },
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Identify {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
 
@@ -368,6 +375,20 @@ pub struct Identify {
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub traits: Option<IdentifyTraits>,
+}
+
+impl Default for Identify {
+    fn default() -> Self {
+        Self {
+            message_type: "identify".to_owned(),
+            message_id: Uuid::new_v4().to_string(),
+            id: None,
+            context: None,
+            integrations: None,
+            timestamp: None,
+            traits: None,
+        }
+    }
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -385,8 +406,14 @@ pub struct TrackProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
 
@@ -403,6 +430,21 @@ pub struct Track {
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
+}
+
+impl Default for Track {
+    fn default() -> Self {
+        Self {
+            message_type: "track".to_owned(),
+            message_id: Uuid::new_v4().to_string(),
+            id: None,
+            context: None,
+            event: "".to_owned(),
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }
+    }
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -432,8 +474,14 @@ pub struct PageProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
 
@@ -452,6 +500,21 @@ pub struct Page {
     pub timestamp: Option<DateTime<Utc>>,
 }
 
+impl Default for Page {
+    fn default() -> Self {
+        Self {
+            message_type: "page".to_owned(),
+            message_id: Uuid::new_v4().to_string(),
+            id: None,
+            context: None,
+            name: "".to_owned(),
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }
+    }
+}
+
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct ScreenProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -461,8 +524,14 @@ pub struct ScreenProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Screen {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
 
@@ -479,6 +548,21 @@ pub struct Screen {
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
+}
+
+impl Default for Screen {
+    fn default() -> Self {
+        Self {
+            message_type: "screen".to_owned(),
+            message_id: Uuid::new_v4().to_string(),
+            id: None,
+            context: None,
+            name: "".to_string(),
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }
+    }
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -523,8 +607,14 @@ pub struct GroupTraits {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Group {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
 
@@ -544,8 +634,29 @@ pub struct Group {
     pub traits: Option<GroupTraits>,
 }
 
-#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+impl Default for Group {
+    fn default() -> Self {
+        Self {
+            message_type: "group".to_owned(),
+            message_id: Uuid::new_v4().to_string(),
+            id: None,
+            context: None,
+            group_id: "".to_owned(),
+            integrations: None,
+            timestamp: None,
+            traits: None,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
+    #[serde(rename = "type")]
+    pub(crate) message_type: String,
+
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub id: Option<IdentifyingID>,
 
@@ -560,4 +671,33 @@ pub struct Alias {
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
+}
+
+impl Default for Alias {
+    fn default() -> Self {
+        Self {
+            message_type: "alias".to_owned(),
+            message_id: Uuid::new_v4().to_string(),
+            id: None,
+            previous_id: "".to_owned(),
+            context: None,
+            integrations: None,
+            timestamp: None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_defaults() {
+        let alias = Alias {
+            message_id: "myid".to_owned(),
+            ..Default::default()
+        };
+        assert_eq!("myid".to_owned(), alias.message_id);
+        assert_eq!("alias".to_owned(), alias.message_type);
+    }
 }
