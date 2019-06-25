@@ -22,14 +22,6 @@ base64 = "0.10"
 failure = "0.1.5"
 reqwest = "0.9"
 clap = { version = "2.33", optional = true }
-
-[dependencies.serde]
-features = ["derive"]
-version = "1.0.93"
-
-[dependencies.uuid]
-features = [
-    "serde",
-    "v4",
-]
-version = "0.7.4"
+serde = { version = "1.0.93", features = ["derive"] }
+uuid = { version = "0.7.4", features = ["serde", "v4"] }
+crossbeam-channel = "0.3.8"

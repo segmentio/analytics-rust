@@ -1,6 +1,7 @@
-use crate::errors::{Error, MaxBatchSize, Result};
+use crate::errors::{Error as AnalyticsError, MaxBatchSize};
 use crate::message::{Batch, BatchMessage, Message};
 use chrono::{DateTime, Utc};
+use failure::{bail, Error};
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
@@ -27,15 +28,17 @@ impl Batcher {
     /// if returns error, you message is garbo
     /// if returns some, this queue needs flushing
     /// if returns none, this message was accepted. it's mine now
-    pub fn push(&mut self, msg: BatchMessage) -> Result<Option<Message>> {
+    pub fn push(&mut self, msg: BatchMessage) -> Result<Option<Message>, Error> {
         let size = serde_json::to_vec(&msg)?.len();
         if size > MAX_MESSAGE_SIZE {
-            return Err(Error::MessageTooLarge(String::from("message too large")));
+            return Err(AnalyticsError::MessageTooLarge("msg too large".to_owned()).into());
         }
+
         self.byte_count += size + 1; // +1 to account for Serialized data's extra commas
         if self.byte_count > MAX_BATCH_SIZE {
-            return Err(Error::MaxBatchSize(MaxBatchSize { message: msg }));
+            return Err(AnalyticsError::MaxBatchSize(MaxBatchSize { message: msg }).into());
         }
+
         self.buf.push(msg);
         Ok(None)
     }
@@ -94,14 +97,14 @@ mod tests {
         };
         let mut batcher = Batcher::new("msg_id".to_string(), Map::new());
         let result = batcher.push(batch_msg.into());
-        assert_eq!(true, result.is_err());
-        assert_eq!(
-            true,
-            match result.err() {
-                Some(Error::MessageTooLarge(_)) => true,
-                _ => false,
-            }
-        );
+
+        let err = result.err().unwrap();
+        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
+
+        match err {
+            AnalyticsError::MessageTooLarge(_) => {}
+            _ => panic!("wrong error type returned: {:?}", err),
+        }
     }
 
     #[test]
@@ -119,16 +122,15 @@ mod tests {
                 break;
             }
         }
-        assert_eq!(true, result.is_err());
-        assert_eq!(
-            Some(batch_msg),
-            match result.err() {
-                Some(Error::MaxBatchSize(s)) => match s.message {
-                    BatchMessage::Track(t) => Some(t),
-                    _ => None,
-                },
-                _ => None,
+
+        let err = result.err().unwrap();
+        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
+
+        match err {
+            AnalyticsError::MaxBatchSize(message) => {
+                assert_eq!(message.message, batch_msg);
             }
-        );
+            _ => panic!("wrong error type returned: {:?}", err),
+        }
     }
 }
