@@ -42,12 +42,6 @@ pub enum BatchMessage {
     Alias(Alias),
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Identify {
-    #[serde(rename = "userId")]
-    pub user_id: String,
-}
-
 macro_rules! msg_impl {
     ($id:ident) => {
         impl From<$id> for Message {
@@ -72,9 +66,184 @@ msg_impl!(Group);
 msg_impl!(Alias);
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct App {
+    name: String,
+    version: String,
+    build: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Campaign {
+    name: String,
+    source: String,
+    medium: String,
+    term: String,
+    content: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Device {
+    id: String,
+    manufacturer: String,
+    model: String,
+    name: String,
+
+    #[serde(rename = "type")]
+    device_type: String,
+
+    version: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Library {
+    name: String,
+    version: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Location {
+    city: String,
+    country: String,
+    latitude: i32,
+    longitude: i32,
+    region: String,
+    speed: u32,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Network {
+    bluetooth: bool,
+    carrier: String,
+    cellular: bool,
+    wifi: bool,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Os {
+    name: String,
+    version: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Webpage {
+    hash: String,
+    path: String,
+    referrer: String,
+    search: String,
+    title: String,
+    url: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Referrer {
+    #[serde(rename = "type")]
+    referrer_type: String,
+    name: String,
+    url: String,
+    link: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct DeviceScreen {
+    #[(rename = "type")]
+    density: u32,
+    height: u32,
+    width: u32,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Context {
+    /// Whether a user is active
+    ///
+    /// This is usually used to flag an .identify() call to just update the traits but not “last seen.”
+    #[serde(skip_serializing_if = "Option::is_none")]
+    active: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    app: Option<App>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    campaign: Option<Campaign>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    device: Option<Device>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ip: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    library: Option<Library>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    locale: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    location: Option<Location>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    network: Option<Network>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    os: Option<Os>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    page: Option<Webpage>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    referrer: Option<Referrer>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    screen: Option<DeviceScreen>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    custom: Option<Map<String, Value>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Identify {
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    anonymous_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
     #[serde(rename = "userId")]
     pub user_id: String,
+
     pub event: String,
 }
 
