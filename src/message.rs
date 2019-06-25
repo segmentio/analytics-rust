@@ -1,8 +1,8 @@
 use crate::errors::{Error, Result};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-
-const MAX_MESSAGE_SIZE: usize = 1024 * 32;
-const MAX_BATCH_SIZE: usize = 1024 * 512;
+use serde_json::{Map, Value};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -16,77 +16,81 @@ pub enum Message {
     Batch(Batch),
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+// TODO: add context, serde field serialize+deserialize renames
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Batch {
-    message_id: String,
-    messages: Vec<BatchMessage>,
-    #[serde(skip_serializing)]
-    byte_count: usize,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "batch")]
+    pub messages: Vec<BatchMessage>,
+
+    #[serde(rename = "sentAt")]
+    pub sent_at: DateTime<Utc>,
+
+    #[serde(rename = "context")]
+    pub context: Map<String, Value>,
 }
 
-impl Batch {
-    pub fn new(message_id: String) -> Self {
-        Self {
-            message_id,
-            messages: Vec::new(),
-            byte_count: 0,
-        }
-    }
-
-    pub fn add(&mut self, message: BatchMessage) -> Result<()> {
-        let size = serde_json::to_vec(&message)?.len();
-        if size > MAX_MESSAGE_SIZE {
-            return Err(Error::MessageTooLarge(String::from("message too large")));
-        }
-        self.byte_count += size;
-        if self.byte_count > MAX_BATCH_SIZE {
-            return Err(Error::MaxBatchSize(String::from(
-                "maximum batch size reached",
-            )));
-        }
-        self.messages.push(message);
-        Ok(())
-    }
-
-    pub fn reset(&mut self, message_id: String) {
-        self.message_id = message_id;
-        self.byte_count = 0;
-        self.messages.clear();
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum BatchMessage {
     Identify(Identify),
     Track(Track),
+    Page(Page),
+    Screen(Screen),
+    Group(Group),
+    Alias(Alias),
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Identify {
     #[serde(rename = "userId")]
     pub user_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+macro_rules! msg_impl {
+    ($id:ident) => {
+        impl From<$id> for Message {
+            fn from(msg: $id) -> Self {
+                Message::$id(msg)
+            }
+        }
+
+        impl From<$id> for BatchMessage {
+            fn from(msg: $id) -> Self {
+                BatchMessage::$id(msg)
+            }
+        }
+    };
+}
+
+msg_impl!(Identify);
+msg_impl!(Track);
+msg_impl!(Page);
+msg_impl!(Screen);
+msg_impl!(Group);
+msg_impl!(Alias);
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
     #[serde(rename = "userId")]
     pub user_id: String,
     pub event: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
     #[serde(rename = "userId")]
     pub user_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Screen {
     #[serde(rename = "userId")]
     pub user_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Group {
     #[serde(rename = "userId")]
     pub user_id: String,
@@ -95,7 +99,7 @@ pub struct Group {
     pub group_id: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
     #[serde(rename = "userId")]
     pub user_id: String,

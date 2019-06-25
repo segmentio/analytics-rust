@@ -1,4 +1,4 @@
-pub mod batch;
+pub mod batcher;
 pub mod buffer;
 pub mod client;
 pub mod errors;
