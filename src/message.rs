@@ -546,9 +546,18 @@ pub struct Group {
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub id: Option<IdentifyingID>,
 
     #[serde(rename = "previousId")]
     pub previous_id: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
