@@ -1,3 +1,4 @@
+use crate::message::BatchMessage;
 use failure::Fail;
 use std::io;
 //use url::ParseError;
@@ -12,8 +13,8 @@ pub enum Error {
     Json(#[fail(cause)] serde_json::error::Error),
     #[fail(display = "error: {}", _0)]
     MessageTooLarge(String),
-    #[fail(display = "error: {}", _0)]
-    MaxBatchSize(String),
+    #[fail(display = "error: maximum batch size reached")]
+    MaxBatchSize(MaxBatchSize),
     //    #[fail(display = "URL error: {}", _0)]
     //    Url(#[fail(cause)] url::ParseError),
     //    #[fail(display = "error: {}", _0)]
@@ -43,3 +44,8 @@ impl From<serde_json::error::Error> for Error {
 //        Error::Url(error)
 //    }
 //}
+
+#[derive(Debug)]
+pub struct MaxBatchSize {
+    pub message: BatchMessage,
+}

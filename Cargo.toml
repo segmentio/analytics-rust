@@ -15,7 +15,7 @@ required-features = ["cli"]
 cli = ["clap"]
 
 [dependencies]
-chrono = "0.4.6"
+chrono = { version = "0.4.6", features = ["serde"] }
 serde_json = "1.0.39"
 url = "1.7.2"
 base64 = "0.10"
