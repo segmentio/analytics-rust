@@ -1,9 +1,7 @@
 use crate::errors::{Error as AnalyticsError, MaxBatchSize};
 use crate::message::{Batch, BatchMessage, Context, Message};
-use chrono::{DateTime, Utc};
-use failure::{bail, Error};
-use serde_json::{Map, Value};
-use uuid::Uuid;
+use chrono::Utc;
+use failure::Error;
 
 const MAX_MESSAGE_SIZE: usize = 1024 * 32;
 const MAX_BATCH_SIZE: usize = 1024 * 512;
@@ -79,6 +77,8 @@ mod tests {
 
         let mut batcher = Batcher::new("msg_id".to_owned(), Some(context.clone()));
         let result = batcher.push(batch_msg.into());
+        assert_eq!(None, result.ok().unwrap());
+
         let batch = batcher.into_message();
         let inner_batch = match batch {
             Message::Batch(b) => b,

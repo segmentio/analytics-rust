@@ -1,10 +1,10 @@
-use chrono::{Date, DateTime, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(untagged)]
 pub enum Message {
     Identify(Identify),
@@ -17,7 +17,7 @@ pub enum Message {
 }
 
 // TODO: add context, serde field serialize+deserialize renames
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Batch {
     #[serde(rename = "messageId")]
     pub message_id: String,
@@ -187,7 +187,7 @@ pub struct IdentifyTraits {
     pub address: Option<TraitAddress>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub age: Option<u8>,
+    pub age: Option<usize>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar: Option<String>,
