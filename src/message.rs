@@ -407,8 +407,22 @@ pub struct Track {
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub id: Option<IdentifyingID>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    pub name: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TrackProperties>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
