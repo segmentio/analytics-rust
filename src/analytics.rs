@@ -6,6 +6,7 @@ use crate::message::{BatchMessage, Context};
 use crossbeam_channel::{Receiver, Sender, TryRecvError, TrySendError};
 use failure::Error;
 use futures::future::Future;
+use std::borrow::Cow;
 use std::mem;
 use uuid::Uuid;
 
@@ -17,15 +18,21 @@ pub struct AnalyticsBuilder<C> {
 }
 
 impl AnalyticsBuilder<HttpClient> {
-    pub fn new(write_key: String) -> AnalyticsBuilder<HttpClient> {
+    pub fn new<'a, S>(write_key: S) -> AnalyticsBuilder<HttpClient>
+    where
+        S: Into<Cow<'a, str>>,
+    {
         Self::new_with_client(write_key, HttpClient::default())
     }
 }
 
 impl<C> AnalyticsBuilder<C> {
-    pub fn new_with_client(write_key: String, client: C) -> AnalyticsBuilder<C> {
+    pub fn new_with_client<'a, S>(write_key: S, client: C) -> AnalyticsBuilder<C>
+    where
+        S: Into<Cow<'a, str>>,
+    {
         AnalyticsBuilder {
-            write_key,
+            write_key: write_key.into().to_string(),
             client,
             channel_capacity: None,
             context: None,
