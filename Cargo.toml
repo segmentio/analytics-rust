@@ -11,17 +11,49 @@ name = "analytics"
 path = "src/main.rs"
 required-features = ["cli"]
 
-[features]
-cli = ["clap"]
+[[example]]
+name = "server"
+required-features = ["examples"]
 
 [dependencies]
-chrono = { version = "0.4.6", features = ["serde"] }
+base64 = "0.10"
+crossbeam-channel = "0.3.8"
+failure = "0.1.5"
+futures = "0.1.27"
+reqwest = "0.9"
 serde_json = "1.0.39"
 url = "1.7.2"
-base64 = "0.10"
-failure = "0.1.5"
-reqwest = "0.9"
-clap = { version = "2.33", optional = true }
-serde = { version = "1.0.93", features = ["derive"] }
-uuid = { version = "0.7.4", features = ["serde", "v4"] }
-crossbeam-channel = "0.3.8"
+
+[dependencies.actix]
+optional = true
+version = "0.7"
+
+[dependencies.actix-web]
+optional = true
+version = "1.0.2"
+
+[dependencies.chrono]
+features = ["serde"]
+version = "0.4.6"
+
+[dependencies.clap]
+optional = true
+version = "2.33"
+
+[dependencies.serde]
+features = ["derive"]
+version = "1.0.93"
+
+[dependencies.uuid]
+features = [
+    "serde",
+    "v4",
+]
+version = "0.7.4"
+
+[features]
+cli = ["clap"]
+examples = [
+    "actix",
+    "actix-web",
+]

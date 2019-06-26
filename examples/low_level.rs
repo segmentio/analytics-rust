@@ -20,11 +20,10 @@ fn main() -> Result<(), Error> {
             timestamp: None,
             traits: None,
         }),
-    )?;
-    if resp.status().as_u16() < 300 {
-        println!("success");
-    } else {
-        println!("failure");
-    }
+    );
+    match resp {
+        Ok(_) => println!("success"),
+        Err(e) => println!("failure: {}", e),
+    };
     Ok(())
 }
