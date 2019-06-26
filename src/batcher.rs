@@ -26,7 +26,7 @@ impl Batcher {
     /// if returns error, you message is garbo
     /// if returns some, this queue needs flushing
     /// if returns none, this message was accepted. it's mine now
-    pub fn push(&mut self, msg: BatchMessage) -> Result<Option<Message>, Error> {
+    pub fn push(&mut self, msg: BatchMessage) -> Result<(), Error> {
         let size = serde_json::to_vec(&msg)?.len();
         if size > MAX_MESSAGE_SIZE {
             return Err(AnalyticsError::MessageTooLarge("msg too large".to_owned()).into());
@@ -38,7 +38,7 @@ impl Batcher {
         }
 
         self.buf.push(msg);
-        Ok(None)
+        Ok(())
     }
 
     pub fn into_message(self) -> Message {
