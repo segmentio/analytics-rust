@@ -6,57 +6,6 @@ use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
-#[serde(tag = "type")]
-pub enum Message {
-    #[serde(rename = "identify")]
-    Identify(Identify),
-
-    #[serde(rename = "track")]
-    Track(Track),
-
-    #[serde(rename = "page")]
-    Page(Page),
-
-    #[serde(rename = "group")]
-    Group(Group),
-
-    #[serde(rename = "screen")]
-    Screen(Screen),
-
-    #[serde(rename = "alias")]
-    Alias(Alias),
-
-    #[serde(rename = "batch")]
-    Batch(Batch),
-}
-
-// TODO: add context, serde field serialize+deserialize renames
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
-pub struct Batch {
-    #[serde(rename = "messageId")]
-    pub message_id: String,
-
-    #[serde(rename = "batch")]
-    pub messages: Vec<BatchMessage>,
-
-    #[serde(rename = "sentAt")]
-    pub sent_at: DateTime<Utc>,
-
-    #[serde(rename = "context")]
-    pub context: Option<Context>,
-}
-
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
-pub enum BatchMessage {
-    Identify(Identify),
-    Track(Track),
-    Page(Page),
-    Screen(Screen),
-    Group(Group),
-    Alias(Alias),
-}
-
 macro_rules! msg_impl {
     ($id:ident) => {
         impl From<$id> for Message {
@@ -131,6 +80,59 @@ macro_rules! common_setters {
         object_setter!(integrations, Integrations);
         object_setter!(timestamp, DateTime<Utc>);
     };
+}
+
+/// `Message` represents the valid message types for which the Segment API supports.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[serde(tag = "type")]
+pub enum Message {
+    #[serde(rename = "identify")]
+    Identify(Identify),
+
+    #[serde(rename = "track")]
+    Track(Track),
+
+    #[serde(rename = "page")]
+    Page(Page),
+
+    #[serde(rename = "group")]
+    Group(Group),
+
+    #[serde(rename = "screen")]
+    Screen(Screen),
+
+    #[serde(rename = "alias")]
+    Alias(Alias),
+
+    #[serde(rename = "batch")]
+    Batch(Batch),
+}
+
+/// `Batch` represents the batch payload for the APIs `/v1/batch` endpoint.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct Batch {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "batch")]
+    pub messages: Vec<BatchMessage>,
+
+    #[serde(rename = "sentAt")]
+    pub sent_at: DateTime<Utc>,
+
+    #[serde(rename = "context")]
+    pub context: Option<Context>,
+}
+
+/// `BatchMessage` represents the message types that are supported to be send via the API's `/v1/batch` endpoint.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub enum BatchMessage {
+    Identify(Identify),
+    Track(Track),
+    Page(Page),
+    Screen(Screen),
+    Group(Group),
+    Alias(Alias),
 }
 
 /// Information about the current application, containing name, version and build.
@@ -262,9 +264,9 @@ pub struct DeviceScreen {
     pub custom: Option<Map<String, Value>>,
 }
 
-/// Contains reserved Traits to be included in any identify call.
+/// `IdentifyTraits` representsthe traits that can be included in any identify call.
 ///
-/// You should only use reserved traits for their intended meaning.
+/// **You should only use reserved traits for their intended meaning.**
 ///
 /// Additional trait information should be added to the custom map field.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -324,6 +326,7 @@ pub struct IdentifyTraits {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `TraitCompany` represents the the trait information that are available for a company.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct TraitCompany {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -345,6 +348,7 @@ pub struct TraitCompany {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `TraitAddress` represents the the trait information that are available for an address.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct TraitAddress {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -366,7 +370,10 @@ pub struct TraitAddress {
     pub custom: Option<Map<String, Value>>,
 }
 
-/// Context is a dictionary of extra information that provides useful context about a datapoint, for example the user’s ip address or locale. Context is a complete and explicit specification, so properties outside the spec will be ignored. You should only use Context fields for their intended meaning.
+/// `Context` is a set of extra information that provides useful context about a datapoint, for example the user’s ip address or locale.
+/// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+///
+/// **You should only use Context fields for their intended meaning.**
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Context {
     /// Whether a user is active
