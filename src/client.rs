@@ -1,5 +1,6 @@
 use crate::message::Message;
+use failure::Error;
 
-pub trait Client<T, E> {
-    fn send(&self, write_key: &str, msg: &Message) -> Result<T, E>;
+pub trait Client {
+    fn send(&self, write_key: &str, msg: &Message) -> Result<(), Error>;
 }

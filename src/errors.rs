@@ -9,14 +9,13 @@ pub enum Error {
     MaxBatchSize(MaxBatchSize),
 
     #[fail(display = "channel full, message not sent: {:?}", message)]
-    ChannelFull {
-        message: BatchMessage,
-    },
+    ChannelFull { message: BatchMessage },
 
     #[fail(display = "channel disconnected, message not sent: {:?}", message)]
-    ChannelDisconnected {
-        message: BatchMessage,
-    },
+    SendChannelDisconnected { message: BatchMessage },
+
+    #[fail(display = "channel disconnected, cannot recv")]
+    RecvChannelDisconnected,
 }
 
 #[derive(Debug)]

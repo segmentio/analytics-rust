@@ -168,7 +168,6 @@ pub struct Referrer {
     custom: Option<Map<String, Value>>,
 }
 
-
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct DeviceScreen {
     #[serde(rename = "type")]

@@ -1,5 +1,6 @@
 use crate::client::Client;
 use crate::message::Message;
+use failure::Error;
 
 pub struct HttpClient {
     client: reqwest::Client,
@@ -12,8 +13,8 @@ impl HttpClient {
     }
 }
 
-impl Client<reqwest::Response, reqwest::Error> for HttpClient {
-    fn send(&self, write_key: &str, msg: &Message) -> Result<reqwest::Response, reqwest::Error> {
+impl Client for HttpClient {
+    fn send(&self, write_key: &str, msg: &Message) -> Result<(), Error> {
         let path = match msg {
             Message::Identify(_) => "/v1/identify",
             Message::Track(_) => "/v1/track",
@@ -28,6 +29,14 @@ impl Client<reqwest::Response, reqwest::Error> for HttpClient {
             .post(&format!("{}{}", self.host, path))
             .basic_auth(write_key, Some(""))
             .json(msg)
-            .send()
+            .send()?;
+
+        Ok(())
+    }
+}
+
+impl Default for HttpClient {
+    fn default() -> Self {
+        HttpClient::new(reqwest::Client::new(), "https://api.segment.io".to_owned())
     }
 }

@@ -1,7 +1,7 @@
 use analytics::client::Client;
 use analytics::http::HttpClient;
 use analytics::message::Message;
-use clap::{App, Arg, AppSettings, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 use failure::Error;
 use std::io;
 
@@ -51,10 +51,7 @@ fn main() -> Result<(), Error> {
 
     println!("{:?}", message);
 
-    let result = client.send(
-        matches.value_of("write-key").unwrap(),
-        &message,
-    )?;
+    let result = client.send(matches.value_of("write-key").unwrap(), &message)?;
 
     println!("{:?}", result);
     Ok(())
