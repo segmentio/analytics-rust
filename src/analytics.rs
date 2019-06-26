@@ -6,7 +6,6 @@ use crate::message::{BatchMessage, Context};
 use crossbeam_channel::{Receiver, Sender, TryRecvError, TrySendError};
 use failure::Error;
 use futures::future::Future;
-use serde_json::{Map, Value};
 use std::mem;
 use uuid::Uuid;
 

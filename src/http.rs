@@ -1,10 +1,24 @@
 use crate::client::Client;
 use crate::message::Message;
-use failure::Error;
+use failure::{format_err, Error};
+use reqwest::StatusCode;
+use std::time::Duration;
 
 pub struct HttpClient {
     client: reqwest::Client,
     host: String,
+}
+
+impl Default for HttpClient {
+    fn default() -> Self {
+        HttpClient {
+            client: reqwest::Client::builder()
+                .connect_timeout(Some(Duration::new(10, 0)))
+                .build()
+                .unwrap(),
+            host: "https://api.segment.io".to_owned(),
+        }
+    }
 }
 
 impl HttpClient {
@@ -25,18 +39,31 @@ impl Client for HttpClient {
             Message::Batch(_) => "/v1/batch",
         };
 
-        self.client
+        let resp = self
+            .client
             .post(&format!("{}{}", self.host, path))
             .basic_auth(write_key, Some(""))
             .json(msg)
             .send()?;
 
-        Ok(())
-    }
-}
-
-impl Default for HttpClient {
-    fn default() -> Self {
-        HttpClient::new(reqwest::Client::new(), "https://api.segment.io".to_owned())
+        match resp.status() {
+            StatusCode::OK => Ok(()),
+            StatusCode::BAD_REQUEST => Err(format_err!(
+                "http request failed: {}",
+                StatusCode::BAD_REQUEST
+            )),
+            StatusCode::PAYLOAD_TOO_LARGE => Err(format_err!(
+                "http request failed: {}",
+                StatusCode::PAYLOAD_TOO_LARGE
+            )),
+            StatusCode::INTERNAL_SERVER_ERROR => Err(format_err!(
+                "http request failed: {}",
+                StatusCode::INTERNAL_SERVER_ERROR
+            )),
+            s => Err(format_err!(
+                "http request failed, unrecognized response: {}",
+                s
+            )),
+        }
     }
 }

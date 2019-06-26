@@ -2,13 +2,9 @@ use analytics::client::Client;
 use analytics::http::HttpClient;
 use analytics::message::{Identify, Message};
 use failure::Error;
-use std::time::Duration;
 
 fn main() -> Result<(), Error> {
-    let req = reqwest::Client::builder()
-        .connect_timeout(Some(Duration::new(10, 0)))
-        .build()?;
-    let client = HttpClient::new(req, "https://api.segment.io".to_owned());
+    let client = HttpClient::default();
     let resp = client.send(
         "segment_write_key",
         &Message::Identify(Identify {
