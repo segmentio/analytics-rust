@@ -1,4 +1,3 @@
-pub mod analytics;
 pub mod batcher;
 pub mod client;
 pub mod errors;
