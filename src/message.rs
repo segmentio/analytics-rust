@@ -594,70 +594,87 @@ impl TrackBuilder {
     }
 }
 
-/// `Track` is how you record any actions your users perform, along with any properties that describe the action.
-#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct Track {
-    /// a unique identifier for each message that lets you find an individual message across the API.
-    #[serde(rename = "messageId")]
-    pub message_id: String,
-
-    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
-    ///
-    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
-    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
-    pub anonymous_id: Option<String>,
-
-    /// Unique identifier for the user in your database
-    ///
-    /// A userId or an anonymousId is required
-    ///
-    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
-    /// Unique identifier for the user in your database
-    ///
-    /// A userId or an anonymousId is required
-    ///
-    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
-    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<String>,
-
-    /// Context is a set of extra information that provides useful context about a datapoint,
-    /// for example the user’s ip address or locale.
-    ///
-    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
-    /// You should only use Context fields for their intended meaning.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub context: Option<Context>,
-
-    /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
-    ///
-    /// Integrations defaults to the following:
-    ///
-    /// ```json
-    ///{
-    ///  All: true,
-    ///  Salesforce: false,
-    ///}
-    /// ```
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<Integrations>,
-
-    /// Used by Segment to send to downstream destinations and for historical replays.
-    ///
-    /// **Note:** Recommended timestamp for analysis when chronology does matter
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
-
-    /// Name of the action that a user has performed.
-    ///
-    /// See the [Event field docs](https://segment.com/docs/spec/track#event) for more detail
     pub event: String,
-
-    /// A set of properties of the screen, like name
-    ///
-    /// See the [Properties field docs](https://segment.com/docs/spec/screen#properties) for a list of reserved property names
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TrackProperties>,
+    pub user: UserIdentification,
+    pub properties: Value,
+    pub timestamp: Option<DateTime<Utc>>,
+    pub context: Option<Context>,
+    pub integrations: Option<Integrations>,
 }
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub enum UserIdentification {
+    UserId(String),
+    AnonymousId(String),
+    UserAndAnonymous(String, String),
+}
+
+// /// `Track` is how you record any actions your users perform, along with any properties that describe the action.
+// #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+// pub struct Track {
+//     /// a unique identifier for each message that lets you find an individual message across the API.
+//     #[serde(rename = "messageId")]
+//     pub message_id: String,
+
+//     /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+//     ///
+//     /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+//     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+//     pub anonymous_id: Option<String>,
+
+//     /// Unique identifier for the user in your database
+//     ///
+//     /// A userId or an anonymousId is required
+//     ///
+//     /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+//     /// Unique identifier for the user in your database
+//     ///
+//     /// A userId or an anonymousId is required
+//     ///
+//     /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+//     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+//     pub user_id: Option<String>,
+
+//     /// Context is a set of extra information that provides useful context about a datapoint,
+//     /// for example the user’s ip address or locale.
+//     ///
+//     /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+//     /// You should only use Context fields for their intended meaning.
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub context: Option<Context>,
+
+//     /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+//     ///
+//     /// Integrations defaults to the following:
+//     ///
+//     /// ```json
+//     ///{
+//     ///  All: true,
+//     ///  Salesforce: false,
+//     ///}
+//     /// ```
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub integrations: Option<Integrations>,
+
+//     /// Used by Segment to send to downstream destinations and for historical replays.
+//     ///
+//     /// **Note:** Recommended timestamp for analysis when chronology does matter
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub timestamp: Option<DateTime<Utc>>,
+
+//     /// Name of the action that a user has performed.
+//     ///
+//     /// See the [Event field docs](https://segment.com/docs/spec/track#event) for more detail
+//     pub event: String,
+
+//     /// A set of properties of the screen, like name
+//     ///
+//     /// See the [Properties field docs](https://segment.com/docs/spec/screen#properties) for a list of reserved property names
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub properties: Option<TrackProperties>,
+// }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct PageProperties {
