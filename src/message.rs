@@ -1,21 +1,38 @@
 use chrono::{DateTime, Utc};
+use failure::format_err;
+use failure::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use std::collections::BTreeMap;
+use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[serde(tag = "type")]
 pub enum Message {
+    #[serde(rename = "identify")]
     Identify(Identify),
+
+    #[serde(rename = "track")]
     Track(Track),
+
+    #[serde(rename = "page")]
     Page(Page),
+
+    #[serde(rename = "group")]
     Group(Group),
+
+    #[serde(rename = "screen")]
     Screen(Screen),
+
+    #[serde(rename = "alias")]
     Alias(Alias),
+
+    #[serde(rename = "batch")]
     Batch(Batch),
 }
 
 // TODO: add context, serde field serialize+deserialize renames
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Batch {
     #[serde(rename = "messageId")]
     pub message_id: String,
@@ -27,7 +44,7 @@ pub struct Batch {
     pub sent_at: DateTime<Utc>,
 
     #[serde(rename = "context")]
-    pub context: Map<String, Value>,
+    pub context: Option<Context>,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
@@ -63,214 +80,845 @@ msg_impl!(Screen);
 msg_impl!(Group);
 msg_impl!(Alias);
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+macro_rules! str_setter {
+    ($id:ident) => {
+        pub fn $id<S>(mut self, $id: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let value = $id.into().trim().to_owned();
+        if value.len() == 0 {
+            return Err(format_err!("{} must contains a value", stringify!($id)));
+        }
+        (self.0).$id = value;
+        Ok(self)
+    }
+    };
+}
+
+macro_rules! object_setter {
+    ($id:ident,$t:ty) => {
+        pub fn $id(mut self, $id: $t) -> Result<Self, Error>
+        {
+            (self.0).$id = Some($id);
+            Ok(self)
+        }
+    };
+}
+
+macro_rules! str_option_setter {
+    ($id:ident) => {
+        pub fn $id<S>(mut self, $id: S) -> Result<Self, Error>
+        where
+            S: Into<String>,
+        {
+            let value = $id.into().trim().to_owned();
+            if value.len() == 0 {
+                return Err(format_err!("{} must contains a value", stringify!($id)));
+            }
+            (self.0).$id = Some(value);
+            Ok(self)
+        }
+    };
+}
+
+macro_rules! common_setters {
+    () => {
+        str_setter!(message_id);
+        str_option_setter!(anonymous_id);
+        str_option_setter!(user_id);
+        object_setter!(context, Context);
+        object_setter!(integrations, BTreeMap<String, bool>);
+        object_setter!(timestamp, DateTime<Utc>);
+    };
+}
+
+/// Information about the current application, containing name, version and build.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct App {
-    name: String,
-    version: String,
-    build: String,
+    pub name: String,
+    pub version: String,
+    pub build: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+///
+/// Information about the campaign that resulted in the API call.
+///
+/// This maps directly to the common UTM campaign parameters.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Campaign {
-    name: String,
-    source: String,
-    medium: String,
-    term: String,
-    content: String,
+    pub name: String,
+    pub source: String,
+    pub medium: String,
+    pub term: String,
+    pub content: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the device, containing id, manufacturer, model, name, type and version.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Device {
-    id: String,
-    manufacturer: String,
-    model: String,
-    name: String,
+    pub id: String,
+    pub manufacturer: String,
+    pub model: String,
+    pub name: String,
 
     #[serde(rename = "type")]
-    device_type: String,
+    pub device_type: String,
 
-    version: String,
+    pub version: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the library making the requests to the API, containing name and version.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Library {
-    name: String,
-    version: String,
+    pub name: String,
+    pub version: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the user’s current location, containing city, country, latitude, longitude, region and speed.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Location {
-    city: String,
-    country: String,
-    latitude: i32,
-    longitude: i32,
-    region: String,
-    speed: u32,
+    pub city: String,
+    pub country: String,
+    pub latitude: isize,
+    pub longitude: isize,
+    pub region: String,
+    pub speed: usize,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the current network connection, containing bluetooth, carrier, cellular and wifi.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Network {
-    bluetooth: bool,
-    carrier: String,
-    cellular: bool,
-    wifi: bool,
+    pub bluetooth: bool,
+    pub carrier: String,
+    pub cellular: bool,
+    pub wifi: bool,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the operating system, containing name and version.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Os {
-    name: String,
-    version: String,
+    pub name: String,
+    pub version: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the current page in the browser, containing hash, path, referrer, search, title and url.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Webpage {
-    hash: String,
-    path: String,
-    referrer: String,
-    search: String,
-    title: String,
-    url: String,
+    pub hash: String,
+    pub path: String,
+    pub referrer: String,
+    pub search: String,
+    pub title: String,
+    pub url: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the way the user was referred to the website or app, containing type, name, url and link.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Referrer {
     #[serde(rename = "type")]
-    referrer_type: String,
-    name: String,
-    url: String,
-    link: String,
+    pub referrer_type: String,
+    pub name: String,
+    pub url: String,
+    pub link: String,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Information about the device’s screen, containing density, height and width.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct DeviceScreen {
     #[serde(rename = "type")]
-    density: u32,
-    height: u32,
-    width: u32,
+    pub density: usize,
+    pub height: usize,
+    pub width: usize,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+/// Contains reserved Traits to be included in any identify call.
+///
+/// You should only use reserved traits for their intended meaning.
+///
+/// Additional trait information should be added to the custom map field.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct IdentifyTraits {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<TraitAddress>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub age: Option<usize>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub birthday: Option<DateTime<Utc>>, // Date does not impl Serialize..
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub company: Option<TraitCompany>,
+
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<DateTime<Utc>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+
+    #[serde(rename = "firstName", skip_serializing_if = "Option::is_none")]
+    pub first_name: Option<String>,
+
+    #[serde(rename = "lastName", skip_serializing_if = "Option::is_none")]
+    pub last_name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gender: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct TraitCompany {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<Value>, // TODO: make string or number enum to reduce variants
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub industry: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employee_count: Option<usize>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct TraitAddress {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+
+    #[serde(rename = "postalCode", skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub street: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+/// Context is a dictionary of extra information that provides useful context about a datapoint, for example the user’s ip address or locale. Context is a complete and explicit specification, so properties outside the spec will be ignored. You should only use Context fields for their intended meaning.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Context {
     /// Whether a user is active
     ///
     /// This is usually used to flag an .identify() call to just update the traits but not “last seen.”
     #[serde(skip_serializing_if = "Option::is_none")]
-    active: Option<bool>,
+    pub active: Option<bool>,
 
+    /// Information about the current application.
     #[serde(skip_serializing_if = "Option::is_none")]
-    app: Option<App>,
+    pub app: Option<App>,
 
+    /// Information about the campaign that resulted in the API call.
     #[serde(skip_serializing_if = "Option::is_none")]
-    campaign: Option<Campaign>,
+    pub campaign: Option<Campaign>,
 
+    /// Information about the device.
     #[serde(skip_serializing_if = "Option::is_none")]
-    device: Option<Device>,
+    pub device: Option<Device>,
 
+    /// Current user’s IP address.
     #[serde(skip_serializing_if = "Option::is_none")]
-    ip: Option<String>,
+    pub ip: Option<String>,
 
+    /// Information about the library making the requests to the API.
     #[serde(skip_serializing_if = "Option::is_none")]
-    library: Option<Library>,
+    pub library: Option<Library>,
 
+    /// Locale string for the current user, for example `en-US`
     #[serde(skip_serializing_if = "Option::is_none")]
-    locale: Option<String>,
+    pub locale: Option<String>,
 
+    /// Information about the user’s current location.
     #[serde(skip_serializing_if = "Option::is_none")]
-    location: Option<Location>,
+    pub location: Option<Location>,
 
+    /// Information about the current network connection.
     #[serde(skip_serializing_if = "Option::is_none")]
-    network: Option<Network>,
+    pub network: Option<Network>,
 
+    /// Information about the operating system.
     #[serde(skip_serializing_if = "Option::is_none")]
-    os: Option<Os>,
+    pub os: Option<Os>,
 
+    /// Information about the current page in the browser.
     #[serde(skip_serializing_if = "Option::is_none")]
-    page: Option<Webpage>,
+    pub page: Option<Webpage>,
 
+    /// Information about the way the user was referred to the website or app.
     #[serde(skip_serializing_if = "Option::is_none")]
-    referrer: Option<Referrer>,
+    pub referrer: Option<Referrer>,
 
+    /// Information about the device’s screen.
     #[serde(skip_serializing_if = "Option::is_none")]
-    screen: Option<DeviceScreen>,
+    pub screen: Option<DeviceScreen>,
 
+    /// Timezones are sent as tzdata strings to add user timezone information which might be stripped from the timestamp.
+    ///
+    /// Ex: `America/New_York`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+
+    /// Group / Account ID.
+    ///
+    /// This is useful in B2B use cases where you need to attribute your non-group calls to a company or account. It is relied on by several Customer Success and CRM tools.
+    #[serde(rename = "groupId", skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
+
+    /// Traits of the current user.
+    ///
+    /// This is useful in cases where you need to track an event, but also associate information from a previous identify call. You should fill this object the same way you would fill traits in an identify call.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub traits: Option<IdentifyTraits>,
+
+    /// User agent of the device making the request.
+    #[serde(rename = "userAgent", skip_serializing_if = "Option::is_none")]
+    pub user_agent: Option<String>,
+
+    /// Additional custom information that can be passed.
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    custom: Option<Map<String, Value>>,
+    pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct IdentifyBuilder(Identify);
+
+impl IdentifyBuilder {
+    pub fn new() -> Result<Self, Error> {
+        Ok(Self(Identify {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            integrations: None,
+            timestamp: None,
+            traits: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(traits, IdentifyTraits);
+
+    pub fn build(self) -> Result<Identify, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+/// Identify lets you tie a user to their actions and record traits about them. It includes a unique User ID and any optional traits you know about them like their email, name, etc.
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Identify {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
-    anonymous_id: Option<String>,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub traits: Option<IdentifyTraits>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct TrackProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub revenue: Option<f64>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<f64>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+pub struct TrackBuilder(Track);
+
+impl TrackBuilder {
+    pub fn new<S>(event: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let evt = event.into().trim().to_owned();
+        if evt.len() == 0 {
+            return Err(format_err!("event must contain a value"));
+        }
+        Ok(Self(Track {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            event: evt,
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(properties, TrackProperties);
+
+    pub fn build(self) -> Result<Track, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
 
     pub event: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TrackProperties>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct PageProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub referrer: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub search: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keywords: Option<Vec<String>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+pub struct PageBuilder(Page);
+
+impl PageBuilder {
+    pub fn new<S>(name: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let n = name.into().trim().to_owned();
+        if n.len() == 0 {
+            return Err(format_err!("name must contain a value"));
+        }
+        Ok(Self(Page {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            name: n,
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(properties, PageProperties);
+
+    pub fn build(self) -> Result<Page, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    pub name: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PageProperties>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct ScreenProperties {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+pub struct ScreenBuilder(Screen);
+
+impl ScreenBuilder {
+    pub fn new<S>(name: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let n = name.into().trim().to_owned();
+        if n.len() == 0 {
+            return Err(format_err!("name must contain a value"));
+        }
+        Ok(Self(Screen {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            name: n,
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(properties, ScreenProperties);
+
+    pub fn build(self) -> Result<Screen, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Screen {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    pub name: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ScreenProperties>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct GroupTraits {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<TraitAddress>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
+
+    #[serde(rename = "createdAt", skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<DateTime<Utc>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub employees: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub industry: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Map<String, Value>>,
+}
+
+pub struct GroupBuilder(Group);
+
+impl GroupBuilder {
+    pub fn new<S>(group_id: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let g_id = group_id.into().trim().to_owned();
+        if g_id.len() == 0 {
+            return Err(format_err!("group_id must contain a value"));
+        }
+        Ok(Self(Group {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            group_id: g_id,
+            integrations: None,
+            timestamp: None,
+            traits: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(traits, GroupTraits);
+
+    pub fn build(self) -> Result<Group, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Group {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
 
     #[serde(rename = "groupId")]
     pub group_id: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub traits: Option<GroupTraits>,
+}
+
+pub struct AliasBuilder(Alias);
+
+impl AliasBuilder {
+    pub fn new<S>(previous_id: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let prev_id = previous_id.into().trim().to_owned();
+        if prev_id.len() == 0 {
+            return Err(format_err!("previous_id must contain a value"));
+        }
+        Ok(Self(Alias {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            previous_id: prev_id,
+            context: None,
+            integrations: None,
+            timestamp: None,
+        }))
+    }
+
+    common_setters!();
+
+    pub fn build(self) -> Result<Alias, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
-    #[serde(rename = "userId")]
-    pub user_id: String,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 
     #[serde(rename = "previousId")]
     pub previous_id: String,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<BTreeMap<String, bool>>,
+
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_alias() -> Result<(), Error> {
+        let alias = AliasBuilder::new("prev_id")?
+            .message_id("myid")?
+            .anonymous_id("anon")?
+            .integrations(BTreeMap::new())?
+            .build()?;
+
+        assert_eq!("myid".to_owned(), alias.message_id);
+        //
+        let msg = Message::Alias(alias);
+        let res = serde_json::to_string(&msg).unwrap();
+        assert_eq!(
+            r#"{"type":"alias","messageId":"myid","anonymousId":"anon","previousId":"prev_id"}"#
+                .to_owned(),
+            res
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_bad_alias() -> Result<(), Error> {
+        let alias = AliasBuilder::new("");
+        assert_eq!(true, alias.is_err());
+        Ok(())
+    }
 }
