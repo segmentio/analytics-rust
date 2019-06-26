@@ -457,6 +457,7 @@ pub struct Context {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `IdentifyBuilder` is a helper to build validate and build valid Identify payloads.
 pub struct IdentifyBuilder(Identify);
 
 impl IdentifyBuilder {
@@ -558,6 +559,7 @@ pub struct TrackProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `TrackBuilder` is a helper to build validate and build valid Track payloads.
 pub struct TrackBuilder(Track);
 
 impl TrackBuilder {
@@ -592,6 +594,7 @@ impl TrackBuilder {
     }
 }
 
+/// `Track` is how you record any actions your users perform, along with any properties that describe the action.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
     /// a unique identifier for each message that lets you find an individual message across the API.
@@ -683,6 +686,7 @@ pub struct PageProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `PageBuilder` is a helper to build validate and build valid Page payloads.
 pub struct PageBuilder(Page);
 
 impl PageBuilder {
@@ -717,6 +721,7 @@ impl PageBuilder {
     }
 }
 
+/// `Page` lets you record whenever a user sees a page of your website, along with any optional properties about the page.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
     /// a unique identifier for each message that lets you find an individual message across the API.
@@ -790,6 +795,7 @@ pub struct ScreenProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `ScreenBuilder` is a helper to build validate and build valid Screen payloads.
 pub struct ScreenBuilder(Screen);
 
 impl ScreenBuilder {
@@ -824,6 +830,7 @@ impl ScreenBuilder {
     }
 }
 
+/// `Screen` lets you record whenever a user sees a screen, the mobile equivalent of `page`, in your mobile app, along with any properties about the screen.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Screen {
     /// a unique identifier for each message that lets you find an individual message across the API.
@@ -930,6 +937,7 @@ pub struct GroupTraits {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `GroupBuilder` is a helper to build validate and build valid Group payloads.
 pub struct GroupBuilder(Group);
 
 impl GroupBuilder {
@@ -965,6 +973,7 @@ impl GroupBuilder {
     }
 }
 
+/// `Group` is how you associate an individual user with a group—be it a company, organization, account, project, team or whatever other crazy name you came up with for the same concept!
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Group {
     /// a unique identifier for each message that lets you find an individual message across the API.
@@ -1030,6 +1039,7 @@ pub struct Group {
     pub traits: Option<GroupTraits>,
 }
 
+/// `AliasBuilder` is a helper to build validate and build valid Alias payloads.
 pub struct AliasBuilder(Alias);
 
 impl AliasBuilder {
@@ -1063,7 +1073,7 @@ impl AliasBuilder {
     }
 }
 
-/// Alias is how you associate one identity with another. This is an advanced method, but it is required to manage user identities successfully in some destinations.
+/// `Alias` is how you associate one identity with another. This is an advanced method, but it is required to manage user identities successfully in some destinations.
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
     /// a unique identifier for each message that lets you find an individual message across the API.
@@ -1123,6 +1133,16 @@ pub struct Alias {
     pub previous_id: String,
 }
 
+/// `Integrations` is a set of destination names that the message should be sent to.
+/// 'All' is a special key that applies when no key for a specific destination is found.
+///
+/// Integrations defaults to the following:
+///```json
+///{
+///  All: true,
+///  Salesforce: false,
+///}
+/// ```
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Integrations(BTreeMap<String, bool>);
 
