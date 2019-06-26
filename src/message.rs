@@ -6,57 +6,6 @@ use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
-#[serde(tag = "type")]
-pub enum Message {
-    #[serde(rename = "identify")]
-    Identify(Identify),
-
-    #[serde(rename = "track")]
-    Track(Track),
-
-    #[serde(rename = "page")]
-    Page(Page),
-
-    #[serde(rename = "group")]
-    Group(Group),
-
-    #[serde(rename = "screen")]
-    Screen(Screen),
-
-    #[serde(rename = "alias")]
-    Alias(Alias),
-
-    #[serde(rename = "batch")]
-    Batch(Batch),
-}
-
-// TODO: add context, serde field serialize+deserialize renames
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
-pub struct Batch {
-    #[serde(rename = "messageId")]
-    pub message_id: String,
-
-    #[serde(rename = "batch")]
-    pub messages: Vec<BatchMessage>,
-
-    #[serde(rename = "sentAt")]
-    pub sent_at: DateTime<Utc>,
-
-    #[serde(rename = "context")]
-    pub context: Option<Context>,
-}
-
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
-pub enum BatchMessage {
-    Identify(Identify),
-    Track(Track),
-    Page(Page),
-    Screen(Screen),
-    Group(Group),
-    Alias(Alias),
-}
-
 macro_rules! msg_impl {
     ($id:ident) => {
         impl From<$id> for Message {
@@ -128,9 +77,62 @@ macro_rules! common_setters {
         str_option_setter!(anonymous_id);
         str_option_setter!(user_id);
         object_setter!(context, Context);
-        object_setter!(integrations, BTreeMap<String, bool>);
+        object_setter!(integrations, Integrations);
         object_setter!(timestamp, DateTime<Utc>);
     };
+}
+
+/// `Message` represents the valid message types for which the Segment API supports.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[serde(tag = "type")]
+pub enum Message {
+    #[serde(rename = "identify")]
+    Identify(Identify),
+
+    #[serde(rename = "track")]
+    Track(Track),
+
+    #[serde(rename = "page")]
+    Page(Page),
+
+    #[serde(rename = "group")]
+    Group(Group),
+
+    #[serde(rename = "screen")]
+    Screen(Screen),
+
+    #[serde(rename = "alias")]
+    Alias(Alias),
+
+    #[serde(rename = "batch")]
+    Batch(Batch),
+}
+
+/// `Batch` represents the batch payload for the APIs `/v1/batch` endpoint.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub struct Batch {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+
+    #[serde(rename = "batch")]
+    pub messages: Vec<BatchMessage>,
+
+    #[serde(rename = "sentAt")]
+    pub sent_at: DateTime<Utc>,
+
+    #[serde(rename = "context")]
+    pub context: Option<Context>,
+}
+
+/// `BatchMessage` represents the message types that are supported to be send via the API's `/v1/batch` endpoint.
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+pub enum BatchMessage {
+    Identify(Identify),
+    Track(Track),
+    Page(Page),
+    Screen(Screen),
+    Group(Group),
+    Alias(Alias),
 }
 
 /// Information about the current application, containing name, version and build.
@@ -262,9 +264,9 @@ pub struct DeviceScreen {
     pub custom: Option<Map<String, Value>>,
 }
 
-/// Contains reserved Traits to be included in any identify call.
+/// `IdentifyTraits` representsthe traits that can be included in any identify call.
 ///
-/// You should only use reserved traits for their intended meaning.
+/// **You should only use reserved traits for their intended meaning.**
 ///
 /// Additional trait information should be added to the custom map field.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -324,6 +326,7 @@ pub struct IdentifyTraits {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `TraitCompany` represents the the trait information that are available for a company.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct TraitCompany {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -345,6 +348,7 @@ pub struct TraitCompany {
     pub custom: Option<Map<String, Value>>,
 }
 
+/// `TraitAddress` represents the the trait information that are available for an address.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct TraitAddress {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -366,7 +370,10 @@ pub struct TraitAddress {
     pub custom: Option<Map<String, Value>>,
 }
 
-/// Context is a dictionary of extra information that provides useful context about a datapoint, for example the user’s ip address or locale. Context is a complete and explicit specification, so properties outside the spec will be ignored. You should only use Context fields for their intended meaning.
+/// `Context` is a set of extra information that provides useful context about a datapoint, for example the user’s ip address or locale.
+/// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+///
+/// **You should only use Context fields for their intended meaning.**
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Context {
     /// Whether a user is active
@@ -459,7 +466,7 @@ impl IdentifyBuilder {
             anonymous_id: None,
             user_id: None,
             context: None,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             timestamp: None,
             traits: None,
         }))
@@ -479,25 +486,60 @@ impl IdentifyBuilder {
 /// Identify lets you tie a user to their actions and record traits about them. It includes a unique User ID and any optional traits you know about them like their email, name, etc.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Identify {
+    /// a unique identifier for each message that lets you find an individual message across the API.
     #[serde(rename = "messageId")]
     pub message_id: String,
 
+    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
 
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Context is a set of extra information that provides useful context about a datapoint,
+    /// for example the user’s ip address or locale.
+    ///
+    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+    /// You should only use Context fields for their intended meaning.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+    ///
+    /// Integrations defaults to the following:
+    ///
+    /// ```json
+    ///{
+    ///  All: true,
+    ///  Salesforce: false,
+    ///}
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Used by Segment to send to downstream destinations and for historical replays.
+    ///
+    /// **Note:** Recommended timestamp for analysis when chronology does matter
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// A set of traits of the user, like email or name.
+    ///
+    /// See the [Traits field docs](https://segment.com/docs/spec/identify#traits) for a list of reserved trait names
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub traits: Option<IdentifyTraits>,
 }
 
@@ -533,7 +575,7 @@ impl TrackBuilder {
             user_id: None,
             context: None,
             event: evt,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             properties: None,
             timestamp: None,
         }))
@@ -552,28 +594,66 @@ impl TrackBuilder {
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Track {
+    /// a unique identifier for each message that lets you find an individual message across the API.
     #[serde(rename = "messageId")]
     pub message_id: String,
 
+    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
 
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Context is a set of extra information that provides useful context about a datapoint,
+    /// for example the user’s ip address or locale.
+    ///
+    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+    /// You should only use Context fields for their intended meaning.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
+    /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+    ///
+    /// Integrations defaults to the following:
+    ///
+    /// ```json
+    ///{
+    ///  All: true,
+    ///  Salesforce: false,
+    ///}
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
+
+    /// Used by Segment to send to downstream destinations and for historical replays.
+    ///
+    /// **Note:** Recommended timestamp for analysis when chronology does matter
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    /// Name of the action that a user has performed.
+    ///
+    /// See the [Event field docs](https://segment.com/docs/spec/track#event) for more detail
     pub event: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// A set of properties of the screen, like name
+    ///
+    /// See the [Properties field docs](https://segment.com/docs/spec/screen#properties) for a list of reserved property names
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<TrackProperties>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -620,7 +700,7 @@ impl PageBuilder {
             user_id: None,
             context: None,
             name: n,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             properties: None,
             timestamp: None,
         }))
@@ -639,28 +719,66 @@ impl PageBuilder {
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Page {
+    /// a unique identifier for each message that lets you find an individual message across the API.
     #[serde(rename = "messageId")]
     pub message_id: String,
 
+    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
 
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Context is a set of extra information that provides useful context about a datapoint,
+    /// for example the user’s ip address or locale.
+    ///
+    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+    /// You should only use Context fields for their intended meaning.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
+    /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+    ///
+    /// Integrations defaults to the following:
+    ///
+    /// ```json
+    ///{
+    ///  All: true,
+    ///  Salesforce: false,
+    ///}
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
+
+    /// Used by Segment to send to downstream destinations and for historical replays.
+    ///
+    /// **Note:** Recommended timestamp for analysis when chronology does matter
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    /// Name of the page
+    ///
+    /// For example, most sites have a `Signup` page that can be useful to tag, so you can see users as they move through your funnel.
     pub name: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// A set of properties of the screen, like name
+    ///
+    /// See the [Properties field docs](https://segment.com/docs/spec/screen#properties) for a list of reserved property names
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PageProperties>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -689,7 +807,7 @@ impl ScreenBuilder {
             user_id: None,
             context: None,
             name: n,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             properties: None,
             timestamp: None,
         }))
@@ -708,28 +826,66 @@ impl ScreenBuilder {
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Screen {
+    /// a unique identifier for each message that lets you find an individual message across the API.
     #[serde(rename = "messageId")]
     pub message_id: String,
 
+    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
 
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Context is a set of extra information that provides useful context about a datapoint,
+    /// for example the user’s ip address or locale.
+    ///
+    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+    /// You should only use Context fields for their intended meaning.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
+    /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+    ///
+    /// Integrations defaults to the following:
+    ///
+    /// ```json
+    ///{
+    ///  All: true,
+    ///  Salesforce: false,
+    ///}
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
+
+    /// Used by Segment to send to downstream destinations and for historical replays.
+    ///
+    /// **Note:** Recommended timestamp for analysis when chronology does matter
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    /// Name of the screen
+    ///
+    /// See the [Name field docs](https://segment.com/docs/spec/screen#name) for more detail
     pub name: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// A set of properties of the screen, like name
+    ///
+    /// See the [Properties field docs](https://segment.com/docs/spec/screen#properties) for a list of reserved property names
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScreenProperties>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -785,13 +941,14 @@ impl GroupBuilder {
         if g_id.len() == 0 {
             return Err(format_err!("group_id must contain a value"));
         }
+
         Ok(Self(Group {
             message_id: Uuid::new_v4().to_string(),
             anonymous_id: None,
             user_id: None,
             context: None,
             group_id: g_id,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             timestamp: None,
             traits: None,
         }))
@@ -810,28 +967,66 @@ impl GroupBuilder {
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Group {
+    /// a unique identifier for each message that lets you find an individual message across the API.
     #[serde(rename = "messageId")]
     pub message_id: String,
 
+    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
 
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Context is a set of extra information that provides useful context about a datapoint,
+    /// for example the user’s ip address or locale.
+    ///
+    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+    /// You should only use Context fields for their intended meaning.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
+    /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+    ///
+    /// Integrations defaults to the following:
+    ///
+    /// ```json
+    ///{
+    ///  All: true,
+    ///  Salesforce: false,
+    ///}
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
+
+    /// Used by Segment to send to downstream destinations and for historical replays.
+    ///
+    /// **Note:** Recommended timestamp for analysis when chronology does matter
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<DateTime<Utc>>,
+
+    /// A unique identifier for the group in your database.
+    ///
+    /// See the [Group ID field docs](https://segment.com/docs/spec/group#group-id) for more detail
     #[serde(rename = "groupId")]
     pub group_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// A set of traits of the group, like email or name
+    ///
+    /// See the [Traits field docs](https://segment.com/docs/spec/group#traits) for a list of reserved trait names
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub traits: Option<GroupTraits>,
 }
 
@@ -846,13 +1041,14 @@ impl AliasBuilder {
         if prev_id.len() == 0 {
             return Err(format_err!("previous_id must contain a value"));
         }
+
         Ok(Self(Alias {
             message_id: Uuid::new_v4().to_string(),
             anonymous_id: None,
             user_id: None,
             previous_id: prev_id,
             context: None,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             timestamp: None,
         }))
     }
@@ -867,28 +1063,76 @@ impl AliasBuilder {
     }
 }
 
+/// Alias is how you associate one identity with another. This is an advanced method, but it is required to manage user identities successfully in some destinations.
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
+    /// a unique identifier for each message that lets you find an individual message across the API.
     #[serde(rename = "messageId")]
     pub message_id: String,
 
+    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
 
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(rename = "previousId")]
-    pub previous_id: String,
-
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Context is a set of extra information that provides useful context about a datapoint,
+    /// for example the user’s ip address or locale.
+    ///
+    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+    /// You should only use Context fields for their intended meaning.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    /// A set of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+    ///
+    /// Integrations defaults to the following:
+    ///
+    /// ```json
+    ///{
+    ///  All: true,
+    ///  Salesforce: false,
+    ///}
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Used by Segment to send to downstream destinations and for historical replays.
+    ///
+    /// **Note:** Recommended timestamp for analysis when chronology does matter
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
+
+    /// Previous unique identifier for the user
+    ///
+    /// See the [Previous ID field docs](https://segment.com/docs/spec/alias#previous-id) for more detail
+    #[serde(rename = "previousId")]
+    pub previous_id: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Integrations(BTreeMap<String, bool>);
+
+impl Default for Integrations {
+    fn default() -> Self {
+        let mut integrations = BTreeMap::new();
+        integrations.insert("All".to_owned(), true);
+        integrations.insert("Salesforce".to_owned(), false);
+        Integrations(integrations)
+    }
 }
 
 #[cfg(test)]
@@ -900,7 +1144,6 @@ mod tests {
         let alias = AliasBuilder::new("prev_id")?
             .message_id("myid")?
             .anonymous_id("anon")?
-            .integrations(BTreeMap::new())?
             .build()?;
 
         assert_eq!("myid".to_owned(), alias.message_id);
@@ -908,7 +1151,7 @@ mod tests {
         let msg = Message::Alias(alias);
         let res = serde_json::to_string(&msg).unwrap();
         assert_eq!(
-            r#"{"type":"alias","messageId":"myid","anonymousId":"anon","previousId":"prev_id"}"#
+            r#"{"type":"alias","messageId":"myid","anonymousId":"anon","integrations":{"All":true,"Salesforce":false},"previousId":"prev_id"}"#
                 .to_owned(),
             res
         );
