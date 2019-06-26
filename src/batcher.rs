@@ -29,7 +29,7 @@ impl Batcher {
     pub fn push(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>, Error> {
         let size = serde_json::to_vec(&msg)?.len();
         if size > MAX_MESSAGE_SIZE {
-            return Err(AnalyticsError::MessageTooLarge("msg too large".to_owned()).into());
+            return Err(AnalyticsError::MessageTooLarge.into());
         }
 
         self.byte_count += size + 1; // +1 to account for Serialized data's extra commas
@@ -54,7 +54,7 @@ impl Batcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::message::{Library, Track, TrackBuilder};
+    use crate::message::{Library, TrackBuilder};
 
     #[test]
     fn test_push_and_into() -> Result<(), Error> {
@@ -101,7 +101,7 @@ mod tests {
         let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
 
         match err {
-            AnalyticsError::MessageTooLarge(_) => {}
+            AnalyticsError::MessageTooLarge => {}
             _ => panic!("wrong error type returned: {:?}", err),
         }
         Ok(())

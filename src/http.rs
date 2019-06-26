@@ -1,8 +1,6 @@
 use crate::client::Client;
-use crate::errors::Error as AnalyticsError;
 use crate::message::Message;
 use failure::Error;
-use reqwest::StatusCode;
 use std::time::Duration;
 
 pub struct HttpClient {
@@ -40,8 +38,7 @@ impl Client for HttpClient {
             Message::Batch(_) => "/v1/batch",
         };
 
-        self
-            .client
+        self.client
             .post(&format!("{}{}", self.host, path))
             .basic_auth(write_key, Some(""))
             .json(msg)

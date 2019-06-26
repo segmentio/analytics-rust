@@ -22,7 +22,7 @@ fn main() -> Result<(), Error> {
             }
             Err(e) => match e.as_fail().downcast_ref::<AnalyticsError>() {
                 Some(e) => match e {
-                    AnalyticsError::MessageTooLarge(e) => {
+                    AnalyticsError::MessageTooLarge => {
                         println!("uh oh, message is invalid do something!: {}", e);
                     }
                     _ => {}
