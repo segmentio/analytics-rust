@@ -1,6 +1,7 @@
 use crate::client::Client;
+use crate::errors::Error as AnalyticsError;
 use crate::message::Message;
-use failure::{format_err, Error};
+use failure::Error;
 use reqwest::StatusCode;
 use std::time::Duration;
 
@@ -39,31 +40,14 @@ impl Client for HttpClient {
             Message::Batch(_) => "/v1/batch",
         };
 
-        let resp = self
+        self
             .client
             .post(&format!("{}{}", self.host, path))
             .basic_auth(write_key, Some(""))
             .json(msg)
-            .send()?;
+            .send()?
+            .error_for_status()?;
 
-        match resp.status() {
-            StatusCode::OK => Ok(()),
-            StatusCode::BAD_REQUEST => Err(format_err!(
-                "http request failed: {}",
-                StatusCode::BAD_REQUEST
-            )),
-            StatusCode::PAYLOAD_TOO_LARGE => Err(format_err!(
-                "http request failed: {}",
-                StatusCode::PAYLOAD_TOO_LARGE
-            )),
-            StatusCode::INTERNAL_SERVER_ERROR => Err(format_err!(
-                "http request failed: {}",
-                StatusCode::INTERNAL_SERVER_ERROR
-            )),
-            s => Err(format_err!(
-                "http request failed, unrecognized response: {}",
-                s
-            )),
-        }
+        Ok(())
     }
 }
