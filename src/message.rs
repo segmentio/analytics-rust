@@ -1,18 +1,33 @@
 use chrono::{DateTime, Utc};
+use failure::format_err;
+use failure::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
-#[serde(untagged)]
+#[serde(tag = "type")]
 pub enum Message {
+    #[serde(rename = "identify")]
     Identify(Identify),
+
+    #[serde(rename = "track")]
     Track(Track),
+
+    #[serde(rename = "page")]
     Page(Page),
+
+    #[serde(rename = "group")]
     Group(Group),
+
+    #[serde(rename = "screen")]
     Screen(Screen),
+
+    #[serde(rename = "alias")]
     Alias(Alias),
+
+    #[serde(rename = "batch")]
     Batch(Batch),
 }
 
@@ -64,6 +79,59 @@ msg_impl!(Page);
 msg_impl!(Screen);
 msg_impl!(Group);
 msg_impl!(Alias);
+
+macro_rules! str_setter {
+    ($id:ident) => {
+        pub fn $id<S>(mut self, $id: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let value = $id.into().trim().to_owned();
+        if value.len() == 0 {
+            return Err(format_err!("{} must contains a value", stringify!($id)));
+        }
+        (self.0).$id = value;
+        Ok(self)
+    }
+    };
+}
+
+macro_rules! object_setter {
+    ($id:ident,$t:ty) => {
+        pub fn $id(mut self, $id: $t) -> Result<Self, Error>
+        {
+            (self.0).$id = Some($id);
+            Ok(self)
+        }
+    };
+}
+
+macro_rules! str_option_setter {
+    ($id:ident) => {
+        pub fn $id<S>(mut self, $id: S) -> Result<Self, Error>
+        where
+            S: Into<String>,
+        {
+            let value = $id.into().trim().to_owned();
+            if value.len() == 0 {
+                return Err(format_err!("{} must contains a value", stringify!($id)));
+            }
+            (self.0).$id = Some(value);
+            Ok(self)
+        }
+    };
+}
+
+macro_rules! common_setters {
+    () => {
+        str_setter!(message_id);
+        str_option_setter!(anonymous_id);
+        str_option_setter!(user_id);
+        object_setter!(context, Context);
+        object_setter!(integrations, BTreeMap<String, bool>);
+        object_setter!(timestamp, DateTime<Utc>);
+    };
+}
 
 /// Information about the current application, containing name, version and build.
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -382,30 +450,43 @@ pub struct Context {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum IdentifyingID {
-    Id {
-        #[serde(rename = "userId")]
-        id: String,
-    },
-    AnonymousId {
-        #[serde(rename = "anonymousId")]
-        id: String,
-    },
+pub struct IdentifyBuilder(Identify);
+
+impl IdentifyBuilder {
+    pub fn new() -> Result<Self, Error> {
+        Ok(Self(Identify {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            integrations: None,
+            timestamp: None,
+            traits: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(traits, IdentifyTraits);
+
+    pub fn build(self) -> Result<Identify, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
 }
 
 /// Identify lets you tie a user to their actions and record traits about them. It includes a unique User ID and any optional traits you know about them like their email, name, etc.
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Identify {
-    #[serde(rename = "type")]
-    pub(crate) message_type: String,
-
     #[serde(rename = "messageId")]
     pub message_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub id: Option<IdentifyingID>,
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
@@ -418,20 +499,6 @@ pub struct Identify {
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub traits: Option<IdentifyTraits>,
-}
-
-impl Default for Identify {
-    fn default() -> Self {
-        Self {
-            message_type: "identify".to_owned(),
-            message_id: Uuid::new_v4().to_string(),
-            id: None,
-            context: None,
-            integrations: None,
-            timestamp: None,
-            traits: None,
-        }
-    }
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -449,16 +516,50 @@ pub struct TrackProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
-pub struct Track {
-    #[serde(rename = "type")]
-    pub(crate) message_type: String,
+pub struct TrackBuilder(Track);
 
+impl TrackBuilder {
+    pub fn new<S>(event: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let evt = event.into().trim().to_owned();
+        if evt.len() == 0 {
+            return Err(format_err!("event must contain a value"));
+        }
+        Ok(Self(Track {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            event: evt,
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(properties, TrackProperties);
+
+    pub fn build(self) -> Result<Track, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Track {
     #[serde(rename = "messageId")]
     pub message_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub id: Option<IdentifyingID>,
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
@@ -473,21 +574,6 @@ pub struct Track {
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
-}
-
-impl Default for Track {
-    fn default() -> Self {
-        Self {
-            message_type: "track".to_owned(),
-            message_id: Uuid::new_v4().to_string(),
-            id: None,
-            context: None,
-            event: "".to_owned(),
-            integrations: None,
-            properties: None,
-            timestamp: None,
-        }
-    }
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -517,16 +603,50 @@ pub struct PageProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
-pub struct Page {
-    #[serde(rename = "type")]
-    pub(crate) message_type: String,
+pub struct PageBuilder(Page);
 
+impl PageBuilder {
+    pub fn new<S>(name: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let n = name.into().trim().to_owned();
+        if n.len() == 0 {
+            return Err(format_err!("name must contain a value"));
+        }
+        Ok(Self(Page {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            name: n,
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(properties, PageProperties);
+
+    pub fn build(self) -> Result<Page, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Page {
     #[serde(rename = "messageId")]
     pub message_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub id: Option<IdentifyingID>,
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
@@ -543,21 +663,6 @@ pub struct Page {
     pub timestamp: Option<DateTime<Utc>>,
 }
 
-impl Default for Page {
-    fn default() -> Self {
-        Self {
-            message_type: "page".to_owned(),
-            message_id: Uuid::new_v4().to_string(),
-            id: None,
-            context: None,
-            name: "".to_owned(),
-            integrations: None,
-            properties: None,
-            timestamp: None,
-        }
-    }
-}
-
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct ScreenProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -567,16 +672,50 @@ pub struct ScreenProperties {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
-pub struct Screen {
-    #[serde(rename = "type")]
-    pub(crate) message_type: String,
+pub struct ScreenBuilder(Screen);
 
+impl ScreenBuilder {
+    pub fn new<S>(name: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let n = name.into().trim().to_owned();
+        if n.len() == 0 {
+            return Err(format_err!("name must contain a value"));
+        }
+        Ok(Self(Screen {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            name: n,
+            integrations: None,
+            properties: None,
+            timestamp: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(properties, ScreenProperties);
+
+    pub fn build(self) -> Result<Screen, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Screen {
     #[serde(rename = "messageId")]
     pub message_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub id: Option<IdentifyingID>,
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
@@ -591,21 +730,6 @@ pub struct Screen {
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
-}
-
-impl Default for Screen {
-    fn default() -> Self {
-        Self {
-            message_type: "screen".to_owned(),
-            message_id: Uuid::new_v4().to_string(),
-            id: None,
-            context: None,
-            name: "".to_string(),
-            integrations: None,
-            properties: None,
-            timestamp: None,
-        }
-    }
 }
 
 #[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
@@ -650,16 +774,50 @@ pub struct GroupTraits {
     pub custom: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
-pub struct Group {
-    #[serde(rename = "type")]
-    pub(crate) message_type: String,
+pub struct GroupBuilder(Group);
 
+impl GroupBuilder {
+    pub fn new<S>(group_id: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let g_id = group_id.into().trim().to_owned();
+        if g_id.len() == 0 {
+            return Err(format_err!("group_id must contain a value"));
+        }
+        Ok(Self(Group {
+            message_id: Uuid::new_v4().to_string(),
+            anonymous_id: None,
+            user_id: None,
+            context: None,
+            group_id: g_id,
+            integrations: None,
+            timestamp: None,
+            traits: None,
+        }))
+    }
+
+    common_setters!();
+    object_setter!(traits, GroupTraits);
+
+    pub fn build(self) -> Result<Group, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
+        }
+        Ok(self.0)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Group {
     #[serde(rename = "messageId")]
     pub message_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub id: Option<IdentifyingID>,
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
@@ -677,31 +835,48 @@ pub struct Group {
     pub traits: Option<GroupTraits>,
 }
 
-impl Default for Group {
-    fn default() -> Self {
-        Self {
-            message_type: "group".to_owned(),
+pub struct AliasBuilder(Alias);
+
+impl AliasBuilder {
+    pub fn new<S>(previous_id: S) -> Result<Self, Error>
+    where
+        S: Into<String>,
+    {
+        let prev_id = previous_id.into().trim().to_owned();
+        if prev_id.len() == 0 {
+            return Err(format_err!("previous_id must contain a value"));
+        }
+        Ok(Self(Alias {
             message_id: Uuid::new_v4().to_string(),
-            id: None,
+            anonymous_id: None,
+            user_id: None,
+            previous_id: prev_id,
             context: None,
-            group_id: "".to_owned(),
             integrations: None,
             timestamp: None,
-            traits: None,
+        }))
+    }
+
+    common_setters!();
+
+    pub fn build(self) -> Result<Alias, Error> {
+        if self.0.anonymous_id.is_none() && self.0.user_id.is_none() {
+            return Err(format_err!("an anonymous_id or user_id must be set"));
         }
+        Ok(self.0)
     }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
-    #[serde(rename = "type")]
-    pub(crate) message_type: String,
-
     #[serde(rename = "messageId")]
     pub message_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub id: Option<IdentifyingID>,
+    #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
+    pub anonymous_id: Option<String>,
+
+    #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
 
     #[serde(rename = "previousId")]
     pub previous_id: String,
@@ -716,31 +891,34 @@ pub struct Alias {
     pub timestamp: Option<DateTime<Utc>>,
 }
 
-impl Default for Alias {
-    fn default() -> Self {
-        Self {
-            message_type: "alias".to_owned(),
-            message_id: Uuid::new_v4().to_string(),
-            id: None,
-            previous_id: "".to_owned(),
-            context: None,
-            integrations: None,
-            timestamp: None,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_defaults() {
-        let alias = Alias {
-            message_id: "myid".to_owned(),
-            ..Default::default()
-        };
+    fn test_alias() -> Result<(), Error> {
+        let alias = AliasBuilder::new("prev_id")?
+            .message_id("myid")?
+            .anonymous_id("anon")?
+            .integrations(BTreeMap::new())?
+            .build()?;
+
         assert_eq!("myid".to_owned(), alias.message_id);
-        assert_eq!("alias".to_owned(), alias.message_type);
+        //
+        let msg = Message::Alias(alias);
+        let res = serde_json::to_string(&msg).unwrap();
+        assert_eq!(
+            r#"{"type":"alias","messageId":"myid","anonymousId":"anon","previousId":"prev_id"}"#
+                .to_owned(),
+            res
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_bad_alias() -> Result<(), Error> {
+        let alias = AliasBuilder::new("");
+        assert_eq!(true, alias.is_err());
+        Ok(())
     }
 }
