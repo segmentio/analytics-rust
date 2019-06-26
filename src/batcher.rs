@@ -51,103 +51,85 @@ impl Batcher {
     }
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//    use crate::message::{Library, Track};
-//
-//    #[test]
-//    fn test_push_and_into() {
-//        let batch_msg = Track {
-//            id: Some(IdentifyingID::Id {
-//                id: "myid".to_owned(),
-//            }),
-//            event: "login".to_owned(),
-//            ..Default::default()
-//        };
-//
-//        let context = Context {
-//            library: Some(Library {
-//                name: "analytics-rust".to_owned(),
-//                version: env!("CARGO_PKG_VERSION").to_owned(),
-//                ..Default::default()
-//            }),
-//            ..Default::default()
-//        };
-//
-//        let mut batcher = Batcher::new("msg_id".to_owned(), Some(context.clone()));
-//        let result = batcher.push(batch_msg.into());
-//        assert_eq!(None, result.ok().unwrap());
-//
-//        let batch = batcher.into_message();
-//        let inner_batch = match batch {
-//            Message::Batch(b) => b,
-//            _ => panic!("invalid message type"),
-//        };
-//        assert_eq!(context, inner_batch.context.unwrap());
-//        assert_eq!(1, inner_batch.messages.len());
-//
-//        let track = match inner_batch.messages.get(0).unwrap() {
-//            BatchMessage::Track(t) => t,
-//            _ => panic!("invalid message batch type"),
-//        };
-//        assert_eq!(
-//            &IdentifyingID::Id {
-//                id: "myid".to_owned()
-//            },
-//            track.id.as_ref().unwrap()
-//        );
-//        assert_eq!("login".to_owned(), track.event);
-//    }
-//
-//    #[test]
-//    fn test_bad_message_size() {
-//        let batch_msg = Track {
-//            id: Some(IdentifyingID::Id {
-//                id: String::from_utf8(vec![b'a'; 1024 * 33]).unwrap(), // 33KB message
-//            }),
-//            event: "login".to_owned(),
-//            ..Default::default()
-//        };
-//        let mut batcher = Batcher::new("msg_id".to_owned(), None);
-//        let result = batcher.push(batch_msg.into());
-//
-//        let err = result.err().unwrap();
-//        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
-//
-//        match err {
-//            AnalyticsError::MessageTooLarge(_) => {}
-//            _ => panic!("wrong error type returned: {:?}", err),
-//        }
-//    }
-//
-//    #[test]
-//    fn test_max_buffer() {
-//        let batch_msg = Track {
-//            id: Some(IdentifyingID::Id {
-//                id: String::from_utf8(vec![b'a'; 1024 * 30]).unwrap(), // 30KB message
-//            }),
-//            event: "login".to_owned(),
-//            ..Default::default()
-//        };
-//        let mut batcher = Batcher::new("msg_id".to_owned(), None);
-//
-//        let mut result = Ok(None);
-//        for _i in 0..20 {
-//            result = batcher.push(batch_msg.clone().into());
-//            if result.is_err() {
-//                break;
-//            }
-//        }
-//
-//        let err = result.err().unwrap();
-//        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
-//
-//        match err {
-//            AnalyticsError::MaxBatchSize(message) => {
-//                assert_eq!(message.message, BatchMessage::Track(batch_msg));
-//            }
-//            _ => panic!("wrong error type returned: {:?}", err),
-//        }
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::message::{Library, Track, TrackBuilder};
+
+    #[test]
+    fn test_push_and_into() -> Result<(), Error> {
+        let batch_msg = TrackBuilder::new("login")?.user_id("myid")?.build()?;
+        let context = Context {
+            library: Some(Library {
+                name: "analytics-rust".to_owned(),
+                version: env!("CARGO_PKG_VERSION").to_owned(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let mut batcher = Batcher::new("msg_id".to_owned(), Some(context.clone()));
+        let result = batcher.push(batch_msg.into());
+        assert_eq!(None, result.ok().unwrap());
+
+        let batch = batcher.into_message();
+        let inner_batch = match batch {
+            Message::Batch(b) => b,
+            _ => panic!("invalid message type"),
+        };
+        assert_eq!(context, inner_batch.context.unwrap());
+        assert_eq!(1, inner_batch.messages.len());
+
+        let track = match inner_batch.messages.get(0).unwrap() {
+            BatchMessage::Track(t) => t,
+            _ => panic!("invalid message batch type"),
+        };
+        assert_eq!(&"myid".to_owned(), &track.user_id.clone().unwrap());
+        assert_eq!("login".to_owned(), track.event);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bad_message_size() -> Result<(), Error> {
+        let batch_msg = TrackBuilder::new("login")?
+            .user_id(String::from_utf8(vec![b'a'; 1024 * 33]).unwrap())? // 33KB message
+            .build()?;
+        let mut batcher = Batcher::new("msg_id".to_owned(), None);
+        let result = batcher.push(batch_msg.into());
+
+        let err = result.err().unwrap();
+        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
+
+        match err {
+            AnalyticsError::MessageTooLarge(_) => {}
+            _ => panic!("wrong error type returned: {:?}", err),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_max_buffer() -> Result<(), Error> {
+        let batch_msg = TrackBuilder::new("login")?
+            .user_id(String::from_utf8(vec![b'a'; 1024 * 30]).unwrap())? // 30KB message
+            .build()?;
+        let mut batcher = Batcher::new("msg_id".to_owned(), None);
+        let mut result = Ok(None);
+        for _i in 0..20 {
+            result = batcher.push(batch_msg.clone().into());
+            if result.is_err() {
+                break;
+            }
+        }
+
+        let err = result.err().unwrap();
+        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
+
+        match err {
+            AnalyticsError::MaxBatchSize(message) => {
+                assert_eq!(message.message, BatchMessage::Track(batch_msg));
+            }
+            _ => panic!("wrong error type returned: {:?}", err),
+        }
+        Ok(())
+    }
+}
