@@ -128,7 +128,7 @@ macro_rules! common_setters {
         str_option_setter!(anonymous_id);
         str_option_setter!(user_id);
         object_setter!(context, Context);
-        object_setter!(integrations, BTreeMap<String, bool>);
+        object_setter!(integrations, Integrations);
         object_setter!(timestamp, DateTime<Utc>);
     };
 }
@@ -459,7 +459,7 @@ impl IdentifyBuilder {
             anonymous_id: None,
             user_id: None,
             context: None,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             timestamp: None,
             traits: None,
         }))
@@ -488,16 +488,16 @@ pub struct Identify {
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub traits: Option<IdentifyTraits>,
 }
 
@@ -533,7 +533,7 @@ impl TrackBuilder {
             user_id: None,
             context: None,
             event: evt,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             properties: None,
             timestamp: None,
         }))
@@ -561,18 +561,18 @@ pub struct Track {
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
     pub event: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<TrackProperties>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
 }
 
@@ -620,7 +620,7 @@ impl PageBuilder {
             user_id: None,
             context: None,
             name: n,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             properties: None,
             timestamp: None,
         }))
@@ -648,18 +648,18 @@ pub struct Page {
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
     pub name: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<PageProperties>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
 }
 
@@ -689,7 +689,7 @@ impl ScreenBuilder {
             user_id: None,
             context: None,
             name: n,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             properties: None,
             timestamp: None,
         }))
@@ -717,18 +717,18 @@ pub struct Screen {
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
     pub name: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScreenProperties>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
 }
 
@@ -785,13 +785,14 @@ impl GroupBuilder {
         if g_id.len() == 0 {
             return Err(format_err!("group_id must contain a value"));
         }
+
         Ok(Self(Group {
             message_id: Uuid::new_v4().to_string(),
             anonymous_id: None,
             user_id: None,
             context: None,
             group_id: g_id,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             timestamp: None,
             traits: None,
         }))
@@ -819,19 +820,19 @@ pub struct Group {
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
     #[serde(rename = "groupId")]
     pub group_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub traits: Option<GroupTraits>,
 }
 
@@ -846,13 +847,14 @@ impl AliasBuilder {
         if prev_id.len() == 0 {
             return Err(format_err!("previous_id must contain a value"));
         }
+
         Ok(Self(Alias {
             message_id: Uuid::new_v4().to_string(),
             anonymous_id: None,
             user_id: None,
             previous_id: prev_id,
             context: None,
-            integrations: None,
+            integrations: Some(Integrations::default()),
             timestamp: None,
         }))
     }
@@ -867,28 +869,73 @@ impl AliasBuilder {
     }
 }
 
+/// Alias is how you associate one identity with another. This is an advanced method, but it is required to manage user identities successfully in some destinations.
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Alias {
+    /// a unique identifier for each message that lets you find an individual message across the API.
     #[serde(rename = "messageId")]
     pub message_id: String,
 
+    /// A pseudo-unique substitute for a User ID, for cases when you don’t have an absolutely unique identifier. A userId or an anonymousId is required.
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "anonymousId", skip_serializing_if = "Option::is_none")]
     pub anonymous_id: Option<String>,
 
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
+    /// Unique identifier for the user in your database
+    ///
+    /// A userId or an anonymousId is required
+    ///
+    /// See the [Identities docs](https://segment.com/docs/spec/identify/#identities) for more detail
     #[serde(rename = "userId", skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 
+    /// Previous unique identifier for the user
+    ///
+    /// See the [Previous ID field docs](https://segment.com/docs/spec/alias#previous-id) for more detail
     #[serde(rename = "previousId")]
     pub previous_id: String,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    /// Context is a set of extra information that provides useful context about a datapoint,
+    /// for example the user’s ip address or locale.
+    ///
+    /// Context is a complete and explicit specification, so properties outside the spec will be ignored.
+    /// You should only use Context fields for their intended meaning.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub context: Option<Context>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<BTreeMap<String, bool>>,
+    /// A dictionary of destination names that the message should be sent to. 'All' is a special key that applies when no key for a specific destination is found.
+    ///
+    /// Integrations defaults to the following:
+    ///
+    /// ```json
+    ///{
+    ///  All: true,
+    ///  Salesforce: false,
+    ///}
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub integrations: Option<Integrations>,
 
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+pub struct Integrations(BTreeMap<String, bool>);
+
+impl Default for Integrations {
+    fn default() -> Self {
+        let mut integrations = BTreeMap::new();
+        integrations.insert("All".to_owned(), true);
+        integrations.insert("Salesforce".to_owned(), false);
+        Integrations(integrations)
+    }
 }
 
 #[cfg(test)]
@@ -900,7 +947,6 @@ mod tests {
         let alias = AliasBuilder::new("prev_id")?
             .message_id("myid")?
             .anonymous_id("anon")?
-            .integrations(BTreeMap::new())?
             .build()?;
 
         assert_eq!("myid".to_owned(), alias.message_id);
@@ -908,7 +954,7 @@ mod tests {
         let msg = Message::Alias(alias);
         let res = serde_json::to_string(&msg).unwrap();
         assert_eq!(
-            r#"{"type":"alias","messageId":"myid","anonymousId":"anon","previousId":"prev_id"}"#
+            r#"{"type":"alias","messageId":"myid","anonymousId":"anon","previousId":"prev_id","integrations":{"All":true,"Salesforce":false}}"#
                 .to_owned(),
             res
         );
