@@ -1,8 +1,15 @@
+//! Low-level HTTP bindings to the Segment tracking API.
+
 use crate::client::Client;
 use crate::message::Message;
 use failure::Error;
 use std::time::Duration;
 
+/// A client which synchronously sends single messages to the Segment tracking
+/// API.
+///
+/// `HttpClient` implements [`Client`](../client/trait.Client.html); see the
+/// documentation for `Client` for more on how to send events to Segment.
 pub struct HttpClient {
     client: reqwest::Client,
     host: String,
@@ -21,6 +28,12 @@ impl Default for HttpClient {
 }
 
 impl HttpClient {
+    /// Construct a new `HttpClient` from a `reqwest::Client` and a Segment API
+    /// scheme and host.
+    ///
+    /// If you don't care to re-use an existing `reqwest::Client`, you can use
+    /// the `Default::default` value, which will send events to
+    /// `https://api.segment.io`.
     pub fn new(client: reqwest::Client, host: String) -> HttpClient {
         HttpClient { client, host }
     }
