@@ -6,6 +6,7 @@ use failure::Error;
 const MAX_MESSAGE_SIZE: usize = 1024 * 32;
 const MAX_BATCH_SIZE: usize = 1024 * 512;
 
+// `Batcher` is a low level abstraction which helps creating a batch Message/Payload to be send to the APIs `/v1/batch` endpoint.
 pub struct Batcher {
     message_id: String,
     buf: Vec<BatchMessage>,
@@ -14,6 +15,7 @@ pub struct Batcher {
 }
 
 impl Batcher {
+    /// `new` creates a `Batcher` for use.
     pub fn new(message_id: String, context: Option<Context>) -> Self {
         Self {
             message_id,
@@ -26,6 +28,10 @@ impl Batcher {
     /// if returns error, you message is garbo
     /// if returns some, this queue needs flushing
     /// if returns none, this message was accepted. it's mine now
+    /// `push` attempts to add a new `BatchMessage` to the batch which results in one of the following outcomes:
+    /// - Message is accepts and added to the batch
+    /// - Message is rejected due to being invalid.
+    /// - Message is accepted, but the batch has reached the maximum size the API supports. The message is then returned in the Result.
     pub fn push(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>, Error> {
         let size = serde_json::to_vec(&msg)?.len();
         if size > MAX_MESSAGE_SIZE {
@@ -41,6 +47,7 @@ impl Batcher {
         Ok(None)
     }
 
+    /// `into_message`
     pub fn into_message(self) -> Message {
         Message::Batch(Batch {
             message_id: self.message_id,
