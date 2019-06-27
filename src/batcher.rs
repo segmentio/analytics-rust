@@ -6,7 +6,7 @@ use failure::Error;
 const MAX_MESSAGE_SIZE: usize = 1024 * 32;
 const MAX_BATCH_SIZE: usize = 1024 * 512;
 
-// `Batcher` is a low level abstraction which helps creating a batch Message/Payload to be send to the APIs `/v1/batch` endpoint.
+/// `Batcher` is a low level abstraction which helps creating a batch Message/Payload to be send to the APIs `/v1/batch` endpoint.
 pub struct Batcher {
     message_id: String,
     buf: Vec<BatchMessage>,
