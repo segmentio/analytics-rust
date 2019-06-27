@@ -1,22 +1,20 @@
 use crate::errors::Error as AnalyticsError;
-use crate::message::{Batch, BatchMessage, Context, Message};
-use chrono::Utc;
+use crate::message::{Batch, BatchMessage, Message};
 use failure::Error;
+use serde_json::Value;
 
 const MAX_MESSAGE_SIZE: usize = 1024 * 32;
 const MAX_BATCH_SIZE: usize = 1024 * 512;
 
 pub struct Batcher {
-    message_id: String,
     buf: Vec<BatchMessage>,
     byte_count: usize,
-    context: Option<Context>,
+    context: Option<Value>,
 }
 
 impl Batcher {
-    pub fn new(message_id: String, context: Option<Context>) -> Self {
+    pub fn new(context: Option<Value>) -> Self {
         Self {
-            message_id,
             buf: Vec::new(),
             byte_count: 0,
             context,
@@ -43,10 +41,9 @@ impl Batcher {
 
     pub fn into_message(self) -> Message {
         Message::Batch(Batch {
-            message_id: self.message_id,
-            messages: self.buf,
-            sent_at: Utc::now(),
+            batch: self.buf,
             context: self.context,
+            integrations: None,
         })
     }
 }
@@ -54,22 +51,21 @@ impl Batcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::message::{Library, TrackBuilder};
+    use crate::message::{Track, User};
+    use serde_json::json;
 
     #[test]
-    fn test_push_and_into() -> Result<(), Error> {
-        let batch_msg = TrackBuilder::new("login")?.user_id("myid")?.build()?;
-        let context = Context {
-            library: Some(Library {
-                name: "analytics-rust".to_owned(),
-                version: env!("CARGO_PKG_VERSION").to_owned(),
-                ..Default::default()
-            }),
+    fn test_push_and_into() {
+        let batch_msg = BatchMessage::Track(Track {
             ..Default::default()
-        };
+        });
 
-        let mut batcher = Batcher::new("msg_id".to_owned(), Some(context.clone()));
-        let result = batcher.push(batch_msg.into());
+        let context = json!({
+            "foo": "bar",
+        });
+
+        let mut batcher = Batcher::new(Some(context.clone()));
+        let result = batcher.push(batch_msg.clone());
         assert_eq!(None, result.ok().unwrap());
 
         let batch = batcher.into_message();
@@ -78,23 +74,21 @@ mod tests {
             _ => panic!("invalid message type"),
         };
         assert_eq!(context, inner_batch.context.unwrap());
-        assert_eq!(1, inner_batch.messages.len());
+        assert_eq!(1, inner_batch.batch.len());
 
-        let track = match inner_batch.messages.get(0).unwrap() {
-            BatchMessage::Track(t) => t,
-            _ => panic!("invalid message batch type"),
-        };
-        assert_eq!(&"myid".to_owned(), &track.user_id.clone().unwrap());
-        assert_eq!("login".to_owned(), track.event);
-        Ok(())
+        assert_eq!(inner_batch.batch, vec![batch_msg]);
     }
 
     #[test]
-    fn test_bad_message_size() -> Result<(), Error> {
-        let batch_msg = TrackBuilder::new("login")?
-            .user_id(String::from_utf8(vec![b'a'; 1024 * 33]).unwrap())? // 33KB message
-            .build()?;
-        let mut batcher = Batcher::new("msg_id".to_owned(), None);
+    fn test_bad_message_size() {
+        let batch_msg = BatchMessage::Track(Track {
+            user: User::UserId {
+                user_id: String::from_utf8(vec![b'a'; 1024 * 33]).unwrap(),
+            },
+            ..Default::default()
+        });
+
+        let mut batcher = Batcher::new(None);
         let result = batcher.push(batch_msg.into());
 
         let err = result.err().unwrap();
@@ -102,17 +96,19 @@ mod tests {
 
         match err {
             AnalyticsError::MessageTooLarge => {}
-            _ => panic!("wrong error type returned: {:?}", err),
         }
-        Ok(())
     }
 
     #[test]
-    fn test_max_buffer() -> Result<(), Error> {
-        let batch_msg = TrackBuilder::new("login")?
-            .user_id(String::from_utf8(vec![b'a'; 1024 * 30]).unwrap())? // 30KB message
-            .build()?;
-        let mut batcher = Batcher::new("msg_id".to_owned(), None);
+    fn test_max_buffer() {
+        let batch_msg = BatchMessage::Track(Track {
+            user: User::UserId {
+                user_id: String::from_utf8(vec![b'a'; 1024 * 30]).unwrap(),
+            },
+            ..Default::default()
+        });
+
+        let mut batcher = Batcher::new(None);
         let mut result = Ok(None);
         for _i in 0..20 {
             result = batcher.push(batch_msg.clone().into());
@@ -123,7 +119,6 @@ mod tests {
         }
 
         let msg = result.ok().unwrap();
-        assert_eq!(BatchMessage::Track(batch_msg), msg.unwrap());
-        Ok(())
+        assert_eq!(batch_msg, msg.unwrap());
     }
 }

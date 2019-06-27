@@ -11,10 +11,6 @@ name = "analytics"
 path = "src/main.rs"
 required-features = ["cli"]
 
-[[example]]
-name = "server"
-required-features = ["examples"]
-
 [dependencies]
 base64 = "0.10"
 crossbeam-channel = "0.3.8"
