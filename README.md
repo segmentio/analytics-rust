@@ -12,7 +12,7 @@
 
 ```toml
 [dependencies]
-analytics = "0.1"
+analytics = "0.2"
 ```
 
 ## Example usage(s)
