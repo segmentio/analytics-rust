@@ -5,6 +5,7 @@ edition = "2018"
 license = "MIT"
 name = "analytics"
 version = "0.2.0"
+readme = "README.md"
 
 [[bin]]
 name = "analytics"
