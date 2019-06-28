@@ -4,7 +4,7 @@ description = "Segment analytics client for Rust https://segment.com/docs/librar
 edition = "2018"
 license = "MIT"
 name = "analytics"
-version = "0.1.0"
+version = "0.2.0"
 
 [[bin]]
 name = "analytics"
