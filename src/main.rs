@@ -25,12 +25,12 @@ fn main() -> Result<(), Error> {
                 .default_value("https://api.segment.io")
                 .long("host"),
         )
-        .subcommand(SubCommand::with_name("identify"))
-        .subcommand(SubCommand::with_name("track"))
-        .subcommand(SubCommand::with_name("page"))
-        .subcommand(SubCommand::with_name("screen"))
-        .subcommand(SubCommand::with_name("group"))
-        .subcommand(SubCommand::with_name("alias"))
+        .subcommand(SubCommand::with_name("identify").about("Send an identify event"))
+        .subcommand(SubCommand::with_name("track").about("Send a track event"))
+        .subcommand(SubCommand::with_name("page").about("Send a page event"))
+        .subcommand(SubCommand::with_name("screen").about("Send a screen event"))
+        .subcommand(SubCommand::with_name("group").about("Send a group event"))
+        .subcommand(SubCommand::with_name("alias").about("Send an alias event"))
         .get_matches();
 
     let client = HttpClient::new(
@@ -49,10 +49,6 @@ fn main() -> Result<(), Error> {
         None => panic!("subcommand is required"),
     };
 
-    println!("{:?}", message);
-
-    let result = client.send(matches.value_of("write-key").unwrap(), &message)?;
-
-    println!("{:?}", result);
+    client.send(matches.value_of("write-key").unwrap(), &message)?;
     Ok(())
 }

@@ -1,10 +1,10 @@
 //! An example showing how to do an ETL-like operation loading events into
 //! Segment.
 
-use analytics::http::HttpClient;
-use analytics::client::Client;
-use analytics::message::{BatchMessage, Track, User};
 use analytics::batcher::Batcher;
+use analytics::client::Client;
+use analytics::http::HttpClient;
+use analytics::message::{BatchMessage, Track, User};
 use serde_json::json;
 
 fn main() {
@@ -17,7 +17,9 @@ fn main() {
     // source.
     for i in 0..100 {
         let msg = BatchMessage::Track(Track {
-            user: User::UserId { user_id: format!("user-{}", i) },
+            user: User::UserId {
+                user_id: format!("user-{}", i),
+            },
             event: "Example Event".to_owned(),
             properties: json!({
                 "foo": format!("bar-{}", i),
