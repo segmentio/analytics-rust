@@ -3,7 +3,7 @@ authors = ["Dean Karn <dean@segment.com>","Ulysse Carion <ulysse@segment.com>"]
 description = "Segment analytics client for Rust https://segment.com/docs/libraries/rust"
 edition = "2018"
 license = "MIT"
-name = "analytics"
+name = "segment"
 version = "0.2.0"
 readme = "README.md"
 
