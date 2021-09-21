@@ -13,21 +13,13 @@ path = "src/main.rs"
 required-features = ["cli"]
 
 [dependencies]
+async-trait = "0.1.51"
 failure = "0.1.5"
-reqwest = "0.9"
+reqwest = { version = "0.11.4", features = ["rustls-tls", "json"], default-features = false }
 serde_json = "1.0.39"
-
-[dependencies.chrono]
-features = ["serde"]
-version = "0.4.6"
-
-[dependencies.clap]
-optional = true
-version = "2.33"
-
-[dependencies.serde]
-features = ["derive"]
-version = "1.0.93"
+chrono = { version = "0.4.6", features = ["serde"] }
+clap = { version = "2.33", optional = true }
+serde = { version = "1.0.93", features = ["derive"] }
 
 [features]
 cli = ["clap"]

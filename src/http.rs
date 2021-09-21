@@ -19,7 +19,7 @@ impl Default for HttpClient {
     fn default() -> Self {
         HttpClient {
             client: reqwest::Client::builder()
-                .connect_timeout(Some(Duration::new(10, 0)))
+                .connect_timeout(Duration::new(10, 0))
                 .build()
                 .unwrap(),
             host: "https://api.segment.io".to_owned(),
@@ -39,8 +39,9 @@ impl HttpClient {
     }
 }
 
+#[async_trait::async_trait]
 impl Client for HttpClient {
-    fn send(&self, write_key: &str, msg: &Message) -> Result<(), Error> {
+    async fn send(&self, write_key: String, msg: Message) -> Result<(), Error> {
         let path = match msg {
             Message::Identify(_) => "/v1/identify",
             Message::Track(_) => "/v1/track",
@@ -51,11 +52,13 @@ impl Client for HttpClient {
             Message::Batch(_) => "/v1/batch",
         };
 
-        self.client
+        let _ = self
+            .client
             .post(&format!("{}{}", self.host, path))
             .basic_auth(write_key, Some(""))
-            .json(msg)
-            .send()?
+            .json(&msg)
+            .send()
+            .await?
             .error_for_status()?;
 
         Ok(())
