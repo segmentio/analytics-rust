@@ -1,8 +1,8 @@
 //! Low-level HTTP bindings to the Segment tracking API.
 
 use crate::client::Client;
+use crate::errors::Result;
 use crate::message::Message;
-use failure::Error;
 use std::time::Duration;
 
 /// A client which synchronously sends single messages to the Segment tracking
@@ -41,7 +41,7 @@ impl HttpClient {
 
 #[async_trait::async_trait]
 impl Client for HttpClient {
-    async fn send(&self, write_key: String, msg: Message) -> Result<(), Error> {
+    async fn send(&self, write_key: String, msg: Message) -> Result<()> {
         let path = match msg {
             Message::Identify(_) => "/v1/identify",
             Message::Track(_) => "/v1/track",

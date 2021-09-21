@@ -1,8 +1,7 @@
 //! Utilities for batching up messages.
 
-use crate::errors::Error as AnalyticsError;
+use crate::errors::{Error, Result};
 use crate::message::{Batch, BatchMessage, Message};
-use failure::Error;
 use serde_json::{Map, Value};
 
 const MAX_MESSAGE_SIZE: usize = 1024 * 32;
@@ -82,10 +81,10 @@ impl Batcher {
     ///
     /// Returns an error if the message is too large to be sent to Segment's
     /// API.
-    pub fn push(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>, Error> {
+    pub fn push(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>> {
         let size = serde_json::to_vec(&msg)?.len();
         if size > MAX_MESSAGE_SIZE {
-            return Err(AnalyticsError::MessageTooLarge.into());
+            return Err(Error::MessageTooLarge);
         }
 
         self.byte_count += size + 1; // +1 to account for Serialized data's extra commas
