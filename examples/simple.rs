@@ -1,18 +1,19 @@
 //! An example showing how to send a single event to Segment.
 
-use analytics::client::Client;
-use analytics::http::HttpClient;
-use analytics::message::{Message, Track, User};
+use segment::client::Client;
+use segment::http::HttpClient;
+use segment::message::{Message, Track, User};
 use serde_json::json;
 
-fn main() {
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
     let write_key = "YOUR_WRITE_KEY";
 
     let client = HttpClient::default();
     client
         .send(
-            write_key,
-            &Message::Track(Track {
+            write_key.to_string(),
+            Message::Track(Track {
                 user: User::UserId {
                     user_id: "some_user_id".to_owned(),
                 },
@@ -24,5 +25,6 @@ fn main() {
                 ..Default::default()
             }),
         )
+        .await
         .expect("could not send to Segment");
 }

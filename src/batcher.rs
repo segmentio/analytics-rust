@@ -13,10 +13,10 @@ const MAX_BATCH_SIZE: usize = 1024 * 512;
 /// The recommended usage pattern looks something like this:
 ///
 /// ```
-/// use analytics::batcher::Batcher;
-/// use analytics::client::Client;
-/// use analytics::http::HttpClient;
-/// use analytics::message::{BatchMessage, Track, User};
+/// use segment::batcher::Batcher;
+/// use segment::client::Client;
+/// use segment::http::HttpClient;
+/// use segment::message::{BatchMessage, Track, User};
 /// use serde_json::json;
 ///
 /// let mut batcher = Batcher::new(None);
@@ -36,7 +36,7 @@ const MAX_BATCH_SIZE: usize = 1024 * 512;
 ///     // When this occurs, we flush the batcher, create a new batcher, and add
 ///     // the message into the new batcher.
 ///     if let Some(msg) = batcher.push(msg).unwrap() {
-///         client.send("your_write_key", &batcher.into_message()).unwrap();
+///         client.send("your_write_key".to_string(), batcher.into_message());
 ///         batcher = Batcher::new(None);
 ///         batcher.push(msg).unwrap();
 ///     }
@@ -152,11 +152,7 @@ mod tests {
         let result = batcher.push(batch_msg.into());
 
         let err = result.err().unwrap();
-        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
-
-        match err {
-            AnalyticsError::MessageTooLarge => {}
-        }
+        assert!(err.to_string().contains("message too large"));
     }
 
     #[test]

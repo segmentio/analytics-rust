@@ -1,13 +1,14 @@
 //! An example showing how to do an ETL-like operation loading events into
 //! Segment.
 
-use analytics::batcher::Batcher;
-use analytics::client::Client;
-use analytics::http::HttpClient;
-use analytics::message::{BatchMessage, Track, User};
+use segment::batcher::Batcher;
+use segment::client::Client;
+use segment::http::HttpClient;
+use segment::message::{BatchMessage, Track, User};
 use serde_json::json;
 
-fn main() {
+#[tokio::main(flavor = "current_thread")]
+async fn main() {
     let write_key = "YOUR_WRITE_KEY";
 
     let client = HttpClient::default();
@@ -31,7 +32,10 @@ fn main() {
         // would probably want to put this message in a deadletter queue or some
         // equivalent.
         if let Some(msg) = batcher.push(msg).unwrap() {
-            client.send(write_key, &batcher.into_message()).unwrap();
+            client
+                .send(write_key.to_string(), batcher.into_message())
+                .await
+                .unwrap();
 
             batcher = Batcher::new(None);
             batcher.push(msg).unwrap(); // Same error condition as above.
