@@ -21,7 +21,7 @@ async fn main() {
             user: User::UserId {
                 user_id: format!("user-{}", i),
             },
-            event: "Example Event".to_owned(),
+            event: "Batched Event".to_owned(),
             properties: json!({
                 "foo": format!("bar-{}", i),
             }),
@@ -41,4 +41,9 @@ async fn main() {
             batcher.push(msg).unwrap(); // Same error condition as above.
         }
     }
+
+    client
+        .send(write_key.to_string(), batcher.into_message())
+        .await
+        .unwrap();
 }
