@@ -51,9 +51,9 @@ const MAX_BATCH_SIZE: usize = 1024 * 512;
 /// If this delay is a concern, it is recommended that you periodically flush
 /// the batcher on your own by calling `into_message`.
 pub struct Batcher {
-    buf: Vec<BatchMessage>,
-    byte_count: usize,
-    context: Option<Value>,
+    pub(crate) buf: Vec<BatchMessage>,
+    pub(crate) byte_count: usize,
+    pub(crate) context: Option<Value>,
 }
 
 impl Batcher {
@@ -82,23 +82,6 @@ impl Batcher {
     /// Returns an error if the message is too large to be sent to Segment's
     /// API.
     pub fn push(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>> {
-        let size = serde_json::to_vec(&msg)?.len();
-        if size > MAX_MESSAGE_SIZE {
-            return Err(Error::MessageTooLarge);
-        }
-
-        self.byte_count += size + 1; // +1 to account for Serialized data's extra commas
-        if self.byte_count > MAX_BATCH_SIZE {
-            return Ok(Some(msg));
-        }
-
-        self.buf.push(msg);
-        Ok(None)
-    }
-
-    /// Push a message into the batcher.
-    /// If the batcher is full, send all the events and clear the batcher automatically.
-    pub fn push_send(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>> {
         let size = serde_json::to_vec(&msg)?.len();
         if size > MAX_MESSAGE_SIZE {
             return Err(Error::MessageTooLarge);

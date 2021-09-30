@@ -67,8 +67,11 @@
 //! }
 //! ```
 
+mod auto_batcher;
 pub mod batcher;
 pub mod client;
 pub mod errors;
 pub mod http;
 pub mod message;
+
+pub use auto_batcher::AutoBatcher;
