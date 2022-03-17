@@ -11,15 +11,15 @@ use std::time::Duration;
 /// `HttpClient` implements [`Client`](../client/trait.Client.html); see the
 /// documentation for `Client` for more on how to send events to Segment.
 pub struct HttpClient {
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
     host: String,
 }
 
 impl Default for HttpClient {
     fn default() -> Self {
         HttpClient {
-            client: reqwest::Client::builder()
-                .connect_timeout(Some(Duration::new(10, 0)))
+            client: reqwest::blocking::Client::builder()
+                .connect_timeout(Duration::new(10, 0))
                 .build()
                 .unwrap(),
             host: "https://api.segment.io".to_owned(),
@@ -34,7 +34,7 @@ impl HttpClient {
     /// If you don't care to re-use an existing `reqwest::Client`, you can use
     /// the `Default::default` value, which will send events to
     /// `https://api.segment.io`.
-    pub fn new(client: reqwest::Client, host: String) -> HttpClient {
+    pub fn new(client: reqwest::blocking::Client, host: String) -> HttpClient {
         HttpClient { client, host }
     }
 }
