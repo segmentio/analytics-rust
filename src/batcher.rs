@@ -44,10 +44,6 @@ const MAX_BATCH_SIZE: usize = 1024 * 512;
 /// }
 /// ```
 ///
-/// Batcher will attempt to fit messages into maximally-sized batches, thus
-/// reducing the number of round trips required with Segment's tracking API.
-/// However, if you produce messages infrequently, this may significantly delay
-/// the sending of messages to Segment.
 ///
 /// If this delay is a concern, it is recommended that you periodically flush
 /// the batcher on your own by calling `into_message`.
@@ -80,7 +76,7 @@ impl Batcher {
     /// message is returned back, and it is recommended that you flush the
     /// current batch before attempting to push `msg` in again.
     ///
-    /// Returns an error if the message is too large to be sent to Segment's
+    /// Returns an error if the message is too large to be sent to June's
     /// API.
     pub fn push(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>, Error> {
         let size = serde_json::to_vec(&msg)?.len();
@@ -97,8 +93,7 @@ impl Batcher {
         Ok(None)
     }
 
-    /// Consumes this batcher and converts it into a message that can be sent to
-    /// Segment.
+    /// Consumes this batcher and converts it into a message that can be sent
     pub fn into_message(self) -> Message {
         Message::Batch(Batch {
             batch: self.buf,

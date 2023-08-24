@@ -28,7 +28,7 @@ impl Default for HttpClient {
 }
 
 impl HttpClient {
-    /// Construct a new `HttpClient` from a `reqwest::Client` and a Segment API
+    /// Construct a new `HttpClient` from a `reqwest::Client` and a June API
     /// scheme and host.
     ///
     /// If you don't care to re-use an existing `reqwest::Client`, you can use

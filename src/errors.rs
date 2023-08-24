@@ -6,7 +6,7 @@ use failure::Fail;
 /// `failure` errors.
 #[derive(Debug, Fail)]
 pub enum Error {
-    /// The given message is too large to be sent to Segment's API.
+    /// The given message is too large to be sent to June's API.
     #[fail(display = "message too large")]
     MessageTooLarge,
 }
