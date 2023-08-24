@@ -1,26 +1,23 @@
-# Analytics Rust &emsp; [![Build Status]][circleci] [![Latest Version]][crates.io]
+# June Analytics Rust &emsp; [![Latest Version]][crates.io]
 
 
-[Build Status]: https://circleci.com/gh/segmentio/analytics-rust.svg?style=badge
-[circleci]: https://circleci.com/gh/segmentio/analytics-rust
-[Latest Version]: https://img.shields.io/crates/v/analytics.svg
-[crates.io]: https://crates.io/crates/analytics
+[crates.io]: https://crates.io/crates/june-analytics
 
-**Analytics Rust is a Segment analytics client for Rust. For additional documentation visit https://segment.com/docs/sources/#server.**
+**Analytics Rust is a June analytics client for Rust.**
 
 ---
 
 ```toml
 [dependencies]
-analytics = "0.2"
+june-analytics = "0.1"
 ```
 
 ## Example usage(s)
 ```rust
-use analytics::http::HttpClient;
-use analytics::client::Client;
-use analytics::message::{BatchMessage, Track, User};
-use analytics::batcher::Batcher;
+use june_analytics::http::HttpClient;
+use june_analytics::client::Client;
+use june_analytics::message::{BatchMessage, Track, User};
+use june_analytics::batcher::Batcher;
 use serde_json::json;
 
 fn main() {
@@ -57,9 +54,9 @@ fn main() {
 or when you want to do struct to struct transformations
 
 ```rust
-use analytics::http::HttpClient;
-use analytics::client::Client;
-use analytics::message::{Track, Message, User};
+use june_analytics::http::HttpClient;
+use june_analytics::client::Client;
+use june_analytics::message::{Track, Message, User};
 use serde_json::json;
 
 fn main() {
@@ -74,7 +71,7 @@ fn main() {
             "some other property": "some other value",
         }),
         ..Default::default()
-    })).expect("could not send to Segment");
+    })).expect("could not send to June");
 }
 
 ```

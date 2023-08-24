@@ -1,8 +1,8 @@
-//! An example showing how to send a single event to Segment.
+//! An example showing how to send a single event to June.
 
-use analytics::client::Client;
-use analytics::http::HttpClient;
-use analytics::message::{Message, Track, User};
+use june_analytics::client::Client;
+use june_analytics::http::HttpClient;
+use june_analytics::message::{Message, Track, User};
 use serde_json::json;
 
 fn main() {
@@ -24,5 +24,5 @@ fn main() {
                 ..Default::default()
             }),
         )
-        .expect("could not send to Segment");
+        .expect("could not send to June");
 }

@@ -1,10 +1,10 @@
 //! An example showing how to do an ETL-like operation loading events into
-//! Segment.
+//! June.
 
-use analytics::batcher::Batcher;
-use analytics::client::Client;
-use analytics::http::HttpClient;
-use analytics::message::{BatchMessage, Track, User};
+use june_analytics::batcher::Batcher;
+use june_analytics::client::Client;
+use june_analytics::http::HttpClient;
+use june_analytics::message::{BatchMessage, Track, User};
 use serde_json::json;
 
 fn main() {

@@ -1,36 +1,8 @@
-//! Representations of the messages which may be sent to Segment's tracking API.
-//!
-//! All Segment messages support a few common fields:
-//!
-//! * Details related to user identification are captured by this library
-//!   through the [`User`](enum.User.html) enum.
-//!
-//! * Some user traits and event properties are specified through the Segment
-//!   spec -- these are standardized members which, if followed, will be
-//!   converted to the native equivalent of each tool.
-//!
-//!     * Standardized event names and properties are specified in [Segment's
-//!       semantic events docs](https://segment.com/docs/spec/semantic/).
-//!     * Standardized user traits are specified in [Segment's `identify` traits
-//!       docs](https://segment.com/docs/spec/identify/#traits).
-//!     * Standardized group traits are specified in [Segment's `group` traits
-//!       docs](https://segment.com/docs/spec/group/#traits).
-//!
-//! * All Segment messages support a `context` field containing additional
-//!   contextual details. This field is exposed in this library as `context`.
-//!   The data in `context` is standardized, and is documented in [Segment's
-//!   context docs](https://segment.com/docs/spec/common/#context).
-//!
-//! * All Segment messages support an `integrations` field that enables simple
-//!   routing at the event collection layer. See [Segment's `integrations`
-//!   docs](https://segment.com/docs/spec/common/#integrations) for how to use
-//!   this field.
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-/// An enum containing all values which may be sent to Segment's tracking API.
+/// An enum containing all values which may be sent to June's tracking API.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Message {
@@ -44,9 +16,6 @@ pub enum Message {
 }
 
 /// An identify event.
-///
-/// See [Segment's documentation](https://segment.com/docs/spec/identify/) for
-/// how to use `identify` events.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Identify {
     /// The user associated with this message.
@@ -74,9 +43,6 @@ pub struct Identify {
 }
 
 /// A track event.
-///
-/// See [Segment's documentation](https://segment.com/docs/spec/track/) for
-/// how to use `track` events.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Track {
     /// The user associated with this message.
@@ -107,9 +73,6 @@ pub struct Track {
 }
 
 /// A page event.
-///
-/// See [Segment's documentation](https://segment.com/docs/spec/page/) for how
-/// to use `page` events.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Page {
     /// The user associated with this message.
@@ -140,9 +103,6 @@ pub struct Page {
 }
 
 /// A screen event.
-///
-/// See [Segment's documentation](https://segment.com/docs/spec/screen/) for how
-/// to use `screen` events.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Screen {
     /// The user associated with this message.
@@ -173,9 +133,6 @@ pub struct Screen {
 }
 
 /// A group event.
-///
-/// See [Segment's documentation](https://segment.com/docs/spec/group/) for how
-/// to use `group` events.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Group {
     /// The user associated with this message.
@@ -207,9 +164,6 @@ pub struct Group {
 }
 
 /// An alias event.
-///
-/// See [Segment's documentation](https://segment.com/docs/spec/alias/) for how
-/// to use `alias` events.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Alias {
     /// The user associated with this message.
@@ -238,10 +192,6 @@ pub struct Alias {
 }
 
 /// A batch of events.
-///
-/// See [Segment's
-/// documentation](https://segment.com/docs/sources/server/http/#batch) for how
-/// to send batches of events.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Batch {
     /// The batch of messages to send.
@@ -279,11 +229,6 @@ pub enum BatchMessage {
 }
 
 /// User ID information.
-///
-/// All Segment tracking API calls require a user ID, an anonymous ID, or both.
-/// See [Segment's
-/// documentation](https://segment.com/docs/spec/identify/#identities) for how
-/// user IDs and anonymous IDs should be used.
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum User {

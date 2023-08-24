@@ -1,14 +1,14 @@
 [package]
-authors = ["Dean Karn <dean@segment.com>","Ulysse Carion <ulysse@segment.com>"]
-description = "Segment analytics client for Rust https://segment.com/docs/libraries/rust"
+authors = ["Sergio Prada <metal@getmetal.io>"]
+description = "June analytics client for Rust"
 edition = "2018"
 license = "MIT"
-name = "analytics"
-version = "0.2.1"
+name = "june-analytics"
+version = "0.0.1"
 readme = "README.md"
 
 [[bin]]
-name = "analytics"
+name = "june-analytics"
 path = "src/main.rs"
 required-features = ["cli"]
 

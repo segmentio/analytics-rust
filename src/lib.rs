@@ -1,7 +1,5 @@
-//! A Rust client to Segment's tracking API.
+//! A Rust client to June's tracking API.
 //!
-//! For more on what Segment is, refer to [Segment's
-//! documentation](https://segment.com/docs/).
 //!
 //! ## Examples
 //!
@@ -24,7 +22,7 @@
 //!             "some other property": "some other value",
 //!         }),
 //!         ..Default::default()
-//!     })).expect("could not send to Segment");
+//!     })).expect("could not send to June");
 //! }
 //! ```
 //!

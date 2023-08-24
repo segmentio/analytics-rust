@@ -8,8 +8,8 @@ use std::io;
 fn main() -> Result<(), Error> {
     let matches = App::new("Analytics")
         .version("0.1")
-        .author("Segment <friends@segment.com>")
-        .about("Sends analytics events to Segment")
+        .author("Metal <metal@getmetal.io>")
+        .about("Sends analytics events to June")
         .setting(AppSettings::ColoredHelp)
         .arg(
             Arg::with_name("write-key")
@@ -22,7 +22,7 @@ fn main() -> Result<(), Error> {
         .arg(
             Arg::with_name("host")
                 .help("Scheme and host to send to")
-                .default_value("https://api.segment.io")
+                .default_value("https://api.june.so")
                 .long("host"),
         )
         .subcommand(SubCommand::with_name("identify").about("Send an identify event"))
