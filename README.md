@@ -1,7 +1,7 @@
 # June Analytics Rust &emsp; [![Latest Version]][crates.io]
 
 
-[Latest Version]: https://img.shields.io/crates/v/analytics.svg
+[Latest Version]: https://img.shields.io/crates/v/june-analytics.svg
 [crates.io]: https://crates.io/crates/june-analytics
 
 **Analytics Rust is a June analytics client for Rust.**
