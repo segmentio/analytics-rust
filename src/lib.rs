@@ -1,5 +1,3 @@
-#![doc = include_str!("../README.md")]
-
 mod auto_batcher;
 mod batcher;
 mod client;
