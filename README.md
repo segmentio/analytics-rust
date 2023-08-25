@@ -6,6 +6,8 @@
 
 **Analytics Rust is a June analytics client for Rust.**
 
+- Mostly from https://github.com/meilisearch/segment
+
 ---
 
 ```toml
