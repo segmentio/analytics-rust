@@ -12,7 +12,7 @@
 
 ```toml
 [dependencies]
-june-analytics = "0.1"
+june-analytics = "0.2"
 ```
 
 ## Example usage(s)
