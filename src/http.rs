@@ -1,24 +1,18 @@
-//! Low-level HTTP bindings to the June tracking API.
-
-use crate::client::Client;
-use crate::message::Message;
-use failure::Error;
+use crate::Client;
+use crate::Message;
+use crate::Result;
 use std::time::Duration;
 
-/// A client which synchronously sends single messages to the June tracking
-/// API.
-///
-/// `HttpClient` implements [`Client`](../client/trait.Client.html); see the
-/// documentation for `Client` for more on how to send events to June.
+#[derive(Clone, Debug)]
 pub struct HttpClient {
-    client: reqwest::blocking::Client,
+    client: reqwest::Client,
     host: String,
 }
 
 impl Default for HttpClient {
     fn default() -> Self {
         HttpClient {
-            client: reqwest::blocking::Client::builder()
+            client: reqwest::Client::builder()
                 .connect_timeout(Duration::new(10, 0))
                 .build()
                 .unwrap(),
@@ -28,19 +22,14 @@ impl Default for HttpClient {
 }
 
 impl HttpClient {
-    /// Construct a new `HttpClient` from a `reqwest::Client` and a June API
-    /// scheme and host.
-    ///
-    /// If you don't care to re-use an existing `reqwest::Client`, you can use
-    /// the `Default::default` value, which will send events to
-    /// `https://api.june.so`.
-    pub fn new(client: reqwest::blocking::Client, host: String) -> HttpClient {
+    pub fn new(client: reqwest::Client, host: String) -> HttpClient {
         HttpClient { client, host }
     }
 }
 
+#[async_trait::async_trait]
 impl Client for HttpClient {
-    fn send(&self, write_key: &str, msg: &Message) -> Result<(), Error> {
+    async fn send(&self, write_key: String, msg: Message) -> Result<()> {
         let path = match msg {
             Message::Identify(_) => "/sdk/identify",
             Message::Track(_) => "/sdk/track",
@@ -51,11 +40,13 @@ impl Client for HttpClient {
             Message::Batch(_) => "/sdk/batch",
         };
 
-        self.client
+        let _ = self
+            .client
             .post(&format!("{}{}", self.host, path))
             .basic_auth(write_key, Some(""))
-            .json(msg)
-            .send()?
+            .json(&msg)
+            .send()
+            .await?
             .error_for_status()?;
 
         Ok(())

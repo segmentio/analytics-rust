@@ -1,0 +1,67 @@
+name: Rust
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  tests:
+    name: Tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, macos-latest, windows-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v1.3.0
+    - name: Run cargo check without any default features
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --no-default-features
+    - name: Run cargo test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --release
+
+  clippy:
+    name: Run Clippy
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v1.3.0
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets -- --deny warnings
+
+  fmt:
+    name: Run Rustfmt
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v1.3.0
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check

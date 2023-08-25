@@ -1,9 +1,10 @@
-use chrono::{DateTime, Utc};
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
+use time::OffsetDateTime;
 
-/// An enum containing all values which may be sent to June's tracking API.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Message {
     Identify(Identify),
@@ -15,8 +16,7 @@ pub enum Message {
     Batch(Batch),
 }
 
-/// An identify event.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Identify {
     /// The user associated with this message.
     #[serde(flatten)]
@@ -26,8 +26,11 @@ pub struct Identify {
     pub traits: Value,
 
     /// The timestamp associated with this message.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        with = "time::serde::rfc3339::option"
+    )]
+    pub timestamp: Option<OffsetDateTime>,
 
     /// Context associated with this message.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -42,8 +45,7 @@ pub struct Identify {
     pub extra: Map<String, Value>,
 }
 
-/// A track event.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Track {
     /// The user associated with this message.
     #[serde(flatten)]
@@ -56,8 +58,11 @@ pub struct Track {
     pub properties: Value,
 
     /// The timestamp associated with this message.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        with = "time::serde::rfc3339::option"
+    )]
+    pub timestamp: Option<OffsetDateTime>,
 
     /// Context associated with this message.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -72,8 +77,7 @@ pub struct Track {
     pub extra: Map<String, Value>,
 }
 
-/// A page event.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Page {
     /// The user associated with this message.
     #[serde(flatten)]
@@ -86,8 +90,11 @@ pub struct Page {
     pub properties: Value,
 
     /// The timestamp associated with this message.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        with = "time::serde::rfc3339::option"
+    )]
+    pub timestamp: Option<OffsetDateTime>,
 
     /// Context associated with this message.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -102,8 +109,7 @@ pub struct Page {
     pub extra: Map<String, Value>,
 }
 
-/// A screen event.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Screen {
     /// The user associated with this message.
     #[serde(flatten)]
@@ -116,8 +122,11 @@ pub struct Screen {
     pub properties: Value,
 
     /// The timestamp associated with this message.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        with = "time::serde::rfc3339::option"
+    )]
+    pub timestamp: Option<OffsetDateTime>,
 
     /// Context associated with this message.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -132,8 +141,7 @@ pub struct Screen {
     pub extra: Map<String, Value>,
 }
 
-/// A group event.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Group {
     /// The user associated with this message.
     #[serde(flatten)]
@@ -147,8 +155,11 @@ pub struct Group {
     pub traits: Value,
 
     /// The timestamp associated with this message.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        with = "time::serde::rfc3339::option"
+    )]
+    pub timestamp: Option<OffsetDateTime>,
 
     /// Context associated with this message.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -163,8 +174,7 @@ pub struct Group {
     pub extra: Map<String, Value>,
 }
 
-/// An alias event.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Alias {
     /// The user associated with this message.
     #[serde(flatten)]
@@ -175,8 +185,11 @@ pub struct Alias {
     pub previous_id: String,
 
     /// The timestamp associated with this message.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<DateTime<Utc>>,
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        with = "time::serde::rfc3339::option"
+    )]
+    pub timestamp: Option<OffsetDateTime>,
 
     /// Context associated with this message.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -191,8 +204,7 @@ pub struct Alias {
     pub extra: Map<String, Value>,
 }
 
-/// A batch of events.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Batch {
     /// The batch of messages to send.
     pub batch: Vec<BatchMessage>,
@@ -210,8 +222,7 @@ pub struct Batch {
     pub extra: Map<String, Value>,
 }
 
-/// An enum containing all messages which may be placed inside a batch.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BatchMessage {
     #[serde(rename = "identify")]
@@ -228,8 +239,20 @@ pub enum BatchMessage {
     Alias(Alias),
 }
 
-/// User ID information.
-#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+impl BatchMessage {
+    pub(crate) fn timestamp_mut(&mut self) -> &mut Option<OffsetDateTime> {
+        match self {
+            Self::Identify(identify) => &mut identify.timestamp,
+            Self::Track(track) => &mut track.timestamp,
+            Self::Page(page) => &mut page.timestamp,
+            Self::Screen(screen) => &mut screen.timestamp,
+            Self::Group(group) => &mut group.timestamp,
+            Self::Alias(alias) => &mut alias.timestamp,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum User {
     /// The user is identified only by a user ID.
@@ -254,12 +277,55 @@ pub enum User {
     },
 }
 
+impl Display for User {
+    /// Display a `UserId`. If he has both an `anonymous_id` and a `user_id` we display the `user_id`
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            User::UserId { user_id } => write!(f, "{}", user_id),
+            User::AnonymousId { anonymous_id } => write!(f, "{}", anonymous_id),
+            User::Both { user_id, .. } => write!(f, "{}", user_id),
+        }
+    }
+}
+
 impl Default for User {
     fn default() -> Self {
         User::AnonymousId {
             anonymous_id: "".to_owned(),
         }
     }
+}
+
+macro_rules! into {
+    (from $from:ident into $for:ident) => {
+        impl From<$from> for $for {
+            fn from(message: $from) -> Self {
+                Self::$from(message)
+            }
+        }
+    };
+    ($(from $from:ident into $for:ident),+ $(,)?) => {
+        $(
+            into!{from $from into $for}
+        )+
+    };
+}
+
+into! {
+    from Identify into Message,
+    from Track into Message,
+    from Page into Message,
+    from Screen into Message,
+    from Group into Message,
+    from Alias into Message,
+    from Batch into Message,
+
+    from Identify into BatchMessage,
+    from Track into BatchMessage,
+    from Page into BatchMessage,
+    from Screen into BatchMessage,
+    from Group into BatchMessage,
+    from Alias into BatchMessage,
 }
 
 #[cfg(test)]

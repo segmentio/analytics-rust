@@ -1,9 +1,7 @@
-//! Utilities for batching up messages.
-
-use crate::errors::Error as AnalyticsError;
 use crate::message::{Batch, BatchMessage, Message};
-use failure::Error;
+use crate::{Error, Result};
 use serde_json::{Map, Value};
+use time::OffsetDateTime;
 
 const MAX_MESSAGE_SIZE: usize = 1024 * 32;
 const MAX_BATCH_SIZE: usize = 1024 * 512;
@@ -14,22 +12,20 @@ const MAX_BATCH_SIZE: usize = 1024 * 512;
 /// The recommended usage pattern looks something like this:
 ///
 /// ```
-/// use analytics::batcher::Batcher;
-/// use analytics::client::Client;
-/// use analytics::http::HttpClient;
-/// use analytics::message::{BatchMessage, Track, User};
+/// use june_analytics::{Batcher, Client, HttpClient};
+/// use june_analytics::message::{BatchMessage, Track, User};
 /// use serde_json::json;
 ///
 /// let mut batcher = Batcher::new(None);
 /// let client = HttpClient::default();
 ///
 /// for i in 0..100 {
-///     let msg = BatchMessage::Track(Track {
+///     let msg = Track {
 ///         user: User::UserId { user_id: format!("user-{}", i) },
 ///         event: "Example".to_owned(),
 ///         properties: json!({ "foo": "bar" }),
 ///         ..Default::default()
-///     });
+///     };
 ///
 ///     // Batcher returns back ownership of a message if the internal buffer
 ///     // would overflow.
@@ -37,20 +33,32 @@ const MAX_BATCH_SIZE: usize = 1024 * 512;
 ///     // When this occurs, we flush the batcher, create a new batcher, and add
 ///     // the message into the new batcher.
 ///     if let Some(msg) = batcher.push(msg).unwrap() {
-///         client.send("your_write_key", &batcher.into_message()).unwrap();
+///         client.send("your_write_key".to_string(), batcher.into_message());
 ///         batcher = Batcher::new(None);
 ///         batcher.push(msg).unwrap();
 ///     }
 /// }
 /// ```
 ///
+/// Batcher will attempt to fit messages into maximally-sized batches, thus
+/// reducing the number of round trips required with June's tracking API.
+/// However, if you produce messages infrequently, this may significantly delay
+/// the sending of messages to June.
 ///
 /// If this delay is a concern, it is recommended that you periodically flush
 /// the batcher on your own by calling `into_message`.
+///
+/// By default if the message you push in the batcher does not contains any
+/// timestamp, the timestamp at the time of the push will be automatically
+/// added to your message.
+/// You can disable this behaviour with the [without_auto_timestamp] method
+/// though.
+#[derive(Clone, Debug)]
 pub struct Batcher {
-    buf: Vec<BatchMessage>,
-    byte_count: usize,
-    context: Option<Value>,
+    pub(crate) buf: Vec<BatchMessage>,
+    pub(crate) byte_count: usize,
+    pub(crate) context: Option<Value>,
+    pub(crate) auto_timestamp: bool,
 }
 
 impl Batcher {
@@ -63,7 +71,12 @@ impl Batcher {
             buf: Vec::new(),
             byte_count: 0,
             context,
+            auto_timestamp: true,
         }
+    }
+
+    pub fn without_auto_timestamp(&mut self) {
+        self.auto_timestamp = false;
     }
 
     /// Push a message into the batcher.
@@ -78,10 +91,15 @@ impl Batcher {
     ///
     /// Returns an error if the message is too large to be sent to June's
     /// API.
-    pub fn push(&mut self, msg: BatchMessage) -> Result<Option<BatchMessage>, Error> {
+    pub fn push(&mut self, msg: impl Into<BatchMessage>) -> Result<Option<BatchMessage>> {
+        let mut msg: BatchMessage = msg.into();
+        let timestamp = msg.timestamp_mut();
+        if self.auto_timestamp && timestamp.is_none() {
+            *timestamp = Some(OffsetDateTime::now_utc());
+        }
         let size = serde_json::to_vec(&msg)?.len();
         if size > MAX_MESSAGE_SIZE {
-            return Err(AnalyticsError::MessageTooLarge.into());
+            return Err(Error::MessageTooLarge);
         }
 
         self.byte_count += size + 1; // +1 to account for Serialized data's extra commas
@@ -93,7 +111,6 @@ impl Batcher {
         Ok(None)
     }
 
-    /// Consumes this batcher and converts it into a message that can be sent
     pub fn into_message(self) -> Message {
         Message::Batch(Batch {
             batch: self.buf,
@@ -121,6 +138,7 @@ mod tests {
         });
 
         let mut batcher = Batcher::new(Some(context.clone()));
+        batcher.without_auto_timestamp();
         let result = batcher.push(batch_msg.clone());
         assert_eq!(None, result.ok().unwrap());
 
@@ -137,37 +155,34 @@ mod tests {
 
     #[test]
     fn test_bad_message_size() {
-        let batch_msg = BatchMessage::Track(Track {
+        let batch_msg = Track {
             user: User::UserId {
                 user_id: String::from_utf8(vec![b'a'; 1024 * 33]).unwrap(),
             },
             ..Default::default()
-        });
+        };
 
         let mut batcher = Batcher::new(None);
-        let result = batcher.push(batch_msg.into());
+        let result = batcher.push(batch_msg);
 
         let err = result.err().unwrap();
-        let err: &AnalyticsError = err.as_fail().downcast_ref().unwrap();
-
-        match err {
-            AnalyticsError::MessageTooLarge => {}
-        }
+        assert!(err.to_string().contains("message too large"));
     }
 
     #[test]
     fn test_max_buffer() {
-        let batch_msg = BatchMessage::Track(Track {
+        let batch_msg = Track {
             user: User::UserId {
                 user_id: String::from_utf8(vec![b'a'; 1024 * 30]).unwrap(),
             },
             ..Default::default()
-        });
+        };
 
         let mut batcher = Batcher::new(None);
+        batcher.without_auto_timestamp();
         let mut result = Ok(None);
         for _i in 0..20 {
-            result = batcher.push(batch_msg.clone().into());
+            result = batcher.push(batch_msg.clone());
             dbg!(&result);
             if result.is_ok() && result.as_ref().ok().unwrap().is_some() {
                 break;
@@ -175,6 +190,6 @@ mod tests {
         }
 
         let msg = result.ok().unwrap();
-        assert_eq!(batch_msg, msg.unwrap());
+        assert_eq!(BatchMessage::from(batch_msg), msg.unwrap());
     }
 }

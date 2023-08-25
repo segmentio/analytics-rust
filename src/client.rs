@@ -1,12 +1,6 @@
-//! Interfaces to the June tracking API.
+use crate::{Message, Result};
 
-use crate::message::Message;
-use failure::Error;
-
-/// `Client` is a trait representing the HTTP transport layer of the analytics library.
+#[async_trait::async_trait]
 pub trait Client {
-    /// Send a single message to June using the given write key.
-    ///
-    /// A `write_key` is an API key for June's tracking API.
-    fn send(&self, write_key: &str, msg: &Message) -> Result<(), Error>;
+    async fn send(&self, write_key: String, msg: Message) -> Result<()>;
 }
