@@ -1,5 +1,7 @@
 # Analytics Rust &emsp; [![Build Status]][circleci] [![Latest Version]][crates.io]
 
+### ⚠️ Community ⚠️
+This library is community supported. Segment does not manage or update this library. We suggest forking the repo if changes are needed for your project.
 
 [Build Status]: https://circleci.com/gh/segmentio/analytics-rust.svg?style=badge
 [circleci]: https://circleci.com/gh/segmentio/analytics-rust
