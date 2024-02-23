@@ -8,7 +8,7 @@ This library is community supported. Segment does not manage or update this libr
 [Latest Version]: https://img.shields.io/crates/v/analytics.svg
 [crates.io]: https://crates.io/crates/analytics
 
-**Analytics Rust is a Segment analytics client for Rust. For additional documentation visit https://segment.com/docs/sources/#server.**
+**Analytics Rust is a Segment analytics client for Rust.**
 
 ---
 
